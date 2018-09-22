@@ -1,2 +1,2 @@
 
-require("./index").start("project/example")
+require("./index").start("./example")

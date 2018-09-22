@@ -8,7 +8,7 @@ Teakozi is a declarative REST API testing framework for testing micro-services. 
   - Scenario based testing. Externalize the test data and validation data from test specification
   - Reuse API calls in multiple tests
 
-# How to use
+# How to use Teakozi
 
   - include teakozi in your node application
 
@@ -16,26 +16,48 @@ Teakozi is a declarative REST API testing framework for testing micro-services. 
 $ npm install teakozi
 ```
 
-create a project consisting of the following subdirectories
+create a directory in your project consisting of the following subdirectories
   - tests
-  - tests/<testname>.yml
+  - tests/[testname].yml
   - modules
-  - modules/<modulename>.yml
+  - modules/[modulename].yml
   - models
-  - models/<modelxx>.js
+  - models/[modelxx].js
   - config
   - config/index.js
   - payload
-  - payload/<xxx>.json
+  - payload/[xxx].json
 
-### Call the test from .js file
+
+| Directory | Purpose|
+|-|-|
+|tests|contains the yml files that describe the tests|
+|modules|reusable test steps that can be refered in the test yml file|
+|models|externalize the data to drive the tests|
+|config|just one index.js file that contains key value for replacing in the test yml files|
+|payload|the body of the content that can be called in a post step|
+
+see the example folder in the repo for reference. you need to update the config/index.js with your github auth to
+
+## Externalize data from tests
+Teakozi allows you to externalize the data from test definition
+### Reusable modules
+you can refer to the steps in the module as - {{module name}}
+### Configuration data
+{{xxx}} marked content gets replaced from the configuration file keys-> value
+### Dynamic data
+you can collect data in a step and reuse in the subsequent steps. so you can collect title and refer it in subsequent steps like ~title~
+
+## Calling the tests from your node app
+
+in a .js file call
 
 ```
 require("teakozi").start("project/example")
 ```
 
 
-### Structure of a test yml file
+## Structure of a test yml file (tests directory)
 
 | Property |required| type | Purpose|
 | - | - |-|-|
@@ -98,4 +120,4 @@ post:
 
 License
 ----
-MIT
+ISC

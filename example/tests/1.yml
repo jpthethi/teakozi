@@ -1,0 +1,35 @@
+---
+name: "Test Case - Post Gist to Git"
+iterate: "many_runs"
+steps:
+  - post:
+     url: "https://api.github.com/gists"
+     json: "create_gist.json"
+     override:
+      $.description: ~title~
+     headers:
+      Authorization: {{auth}}
+      content-type: application/json
+      User-Agent: teapot-test
+    name: "Post a Gist"
+    check:
+     status: 201
+     body:
+      eq:
+       $.description: ~title~
+      collect:
+       gist_id: $.id
+
+  - post:
+     url: "https://api.github.com/gists/~gist_id~/comments"
+     json: "create_comment.json"
+     override:
+      $.body: ~comment_text~
+     headers:
+      Authorization: {{auth}}
+      content-type: application/json
+      User-Agent: teapot-test
+    iterate: "many_comments"
+    name: "Post a comment on gist ~gist_id~"
+    check:
+     status: 201

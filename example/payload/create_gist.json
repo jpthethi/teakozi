@@ -1,0 +1,9 @@
+{
+  "description": "~title~",
+  "public": "true",
+  "files": {
+    "mygist.txt": {
+      "content": "Demo ~title~"
+    }
+  }
+}
