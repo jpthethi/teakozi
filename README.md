@@ -1,4 +1,4 @@
-[![npm version](https://badge.fury.io/js/teakozi.svg)](https://badge.fury.io/js/teakozi)
+[![npm version](https://badge.fury.io/js/teakozi.svg)](https://badge.fury.io/js/teakozi) [![Build Status](https://travis-ci.org/jpthethi/teakozi.svg?branch=master)](https://travis-ci.org/jpthethi/teakozi)
 
 # Teakozi
 
