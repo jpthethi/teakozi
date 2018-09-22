@@ -1,3 +1,5 @@
+[![npm version](https://badge.fury.io/js/teakozi.svg)](https://badge.fury.io/js/teakozi)
+
 # Teakozi
 
 Teakozi is a declarative REST API testing framework for testing micro-services. Here are the capabilities.
