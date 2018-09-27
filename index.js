@@ -70,7 +70,8 @@ function stephandler(s,bags){
   var ret = {
     start:new Date,
     end:"",
-    valid: false
+    valid: false,
+    error:undefined
   }
 
   var intent = Object.keys(s)[0]
@@ -82,6 +83,7 @@ function stephandler(s,bags){
   payload.url = overlay.layer(payload.url,config, bags)
   ret.url = payload.url;
   ret.method = intent;
+  console.log(ret.method + " " + ret.url)
   var p = Promise.resolve()
   switch(intent){
     case "get":
@@ -132,7 +134,9 @@ function stephandler(s,bags){
       break;
   }
   return new Promise(function(resolve, reject){
-    p.then(b=>{var v = validate(check,b,bags);ret.end=new Date();ret.duration = ret.end-ret.start; ret.asserts = v.asserts;ret.valid = v.valid; resolve(ret)}).catch(e=>{console.error(e);reject(e)})
+    p
+    .then(b=>{var v = validate(check,b,bags);ret.end=new Date();ret.duration = ret.end-ret.start; ret.asserts = v.asserts;ret.valid = v.valid; resolve(ret)})
+    .catch(e=>{ret.error = e; reject(ret)})
   })
 }
 
@@ -145,12 +149,25 @@ function override(json, override) {
   }
 }
 
-function all_tests(proj){
+function all_tests(proj,dir){
+  if(dir!=undefined){
+    requireFromRoot = (function(root) {
+      return function(resource) {
+          return require(root+"/"+resource);
+      }
+    })(dir);
+  }
+
   config = requireFromRoot("./" + proj + '/config/index.js')
   config.testFolder = "./"+proj+"/tests/"
   config.moduleFolder = "./"+proj+"/modules/"
   config.payloadFolder = "./"+proj+"/payload/"
   config.modelFolder = "./"+proj+"/models/"
+  config.logFolder = "./"+proj+"/logs/"
+
+  if (!fs.existsSync(config.logFolder)){
+    fs.mkdirSync(config.logFolder);
+  }
 
   // do it for all the files in test folder
   fs.readdir(config.testFolder, (err, files) => {
@@ -161,7 +178,7 @@ function all_tests(proj){
   })
 }
 
-requireFromRoot = (function(root) {
+var requireFromRoot = (function(root) {
     if(root.indexOf("node_modules")>0) {root = root+"/../../"}
     return function(resource) {
         return require(root+"/"+resource);
@@ -190,13 +207,15 @@ function test_run(file){
           iterations = requireFromRoot(config.modelFolder + s.iterate)
         }
         iterations.forEach((i,j)=>{
+          var cloned_step = JSON.parse(JSON.stringify(s))
           result = result.then(x=>{
-            return stephandler(s,[collect_bag,block,i])
+            return stephandler(cloned_step,[collect_bag,block,i])
           }).then(x=>{
             test_log.steps.push(x);
-            console.log(x);
-          }).catch(e=>{
-            test_log.errors.push(e);
+          }).catch((x)=>{
+            console.error("Error".red)
+            console.error((x.error))
+            test_log.steps.push(x);
           });
         })
       })
@@ -204,6 +223,16 @@ function test_run(file){
     result.then(r=>{
       test_log.end = new Date();
       test_log.duration = test_log.end-test_log.start;
+
+      /*
+      var ts = new Date();
+      fs.writeFile(config.logFolder+ts, JSON.stringify(test_log)+".json", (err) => {
+        if(err) console.log(err);
+        console.log('The file has been saved!');
+      });
+      */
+
+      console.log("-----------Test Log------------")
       console.log(test_log)
     })
   } catch (e) {

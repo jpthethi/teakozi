@@ -1,7 +1,6 @@
 var request = require('request');
 
 this.get = function (url,headers){
-  //console.log(url);
   return new Promise((resolve,reject)=>{
     var options = {
       url : url,
@@ -11,7 +10,7 @@ this.get = function (url,headers){
 
     request(options, function (error, response, body) {
 
-      if (error) { console.log(error);reject(error) }
+      if (error) { reject(error) }
       else {
         resolve({status: response.statusCode,body:JSON.parse(body)})
       }
