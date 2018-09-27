@@ -6,29 +6,49 @@ var config ;
 var jp = require("jsonpath")
 var colors = require('colors');
 
-function assert_eq(lhs, rhs, message){
-  console.log("Assert: " + message + " : " + ((lhs==rhs)?"PASS".green:"FAIL".red))
+function assert_eq(lhs, rhs, message,add){
+  var assertObj={}
+  assertObj.valid = (lhs==rhs)
+  assertObj.detail = "Expected " + message +" : "+ lhs + " got " + rhs;
+  assertObj.message = ("Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
+  if(add!=undefined) add(assertObj)
 }
 
-function assert_neq(lhs, rhs, message){
-  console.log("Assert: " + message + " : " + ((lhs!=rhs)?"PASS".green:"FAIL".red))
+function assert_neq(lhs, rhs, message, add){
+  var assertObj={}
+  assertObj.valid = (lhs!=rhs)
+  assertObj.detail = "Not expected " + message + lhs + " got " + rhs ;
+  assertObj.message = "Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red)
+  if(add!=undefined) add(assertObj)
 }
 
 function validate(c,res,bags){
-  assert_eq(res.status,c.status,"statuscode")
-  if(c.body==undefined) return
+  var ret = {
+    asserts:[],
+    valid : true
+  }
+
+  var add = function(assertObj){
+    ret.asserts.push(assertObj);
+    console.log(assertObj.message)
+    delete assertObj.message
+    ret.valid = ret.valid && assertObj.valid;
+  }
+
+  assert_eq(res.status,c.status,"statuscode",add)
+  if(c.body==undefined) return ret
 
   var eq = c.body.eq;
   if(eq!=undefined){
     Object.keys(eq).forEach(v=>{
-      assert_eq(jp.query(res.body, v),overlay.layer(eq[v], config, bags),v)
+      assert_eq(jp.query(res.body, v),overlay.layer(eq[v], config, bags),v,add)
     })
   }
 
   var neq = c.body.neq;
   if(neq!=undefined){
     Object.keys(neq).forEach(v=>{
-      assert_neq(jp.query(res.body, v),overlay.layer(neq[v], config, bags),v)
+      assert_neq(jp.query(res.body, v),overlay.layer(neq[v], config, bags),v,add)
     })
   }
 
@@ -43,15 +63,25 @@ function validate(c,res,bags){
       console.log(collect_bag)
     }
   }
+  return ret;
 }
 
 function stephandler(s,bags){
+  var ret = {
+    start:new Date,
+    end:"",
+    valid: false
+  }
+
   var intent = Object.keys(s)[0]
   var check = s.check
   var name = overlay.layer(s.name, config, bags);
   var payload = s[intent];
+  ret.name = name
   console.log(("Test: -------"+name+"-----------").cyan)
   payload.url = overlay.layer(payload.url,config, bags)
+  ret.url = payload.url;
+  ret.method = intent;
   var p = Promise.resolve()
   switch(intent){
     case "get":
@@ -76,10 +106,34 @@ function stephandler(s,bags){
         p = invoke.post(payload.url,payload.headers)
       }
       break;
+    case "put":
+      var content = {}
+      if(payload.file!=undefined){
+        var content = fs.readFileSync(config.payloadFolder+payload.file, 'utf8');
+        content = overlay.layer(content,config, bags)
+        p = invoke.put(payload.url,payload.headers,content)
+      }
+      if(payload.json!=undefined){
+        var f = fs.readFileSync(config.payloadFolder+payload.json, 'utf8');
+        f = overlay.layer(f,config, bags)
+        var content = JSON.parse(f)
+        var o = JSON.parse(overlay.layer(JSON.stringify(payload.override),config, bags))
+        content = override(content, o)
+        p = invoke.put_json(payload.url,payload.headers,content)
+      }
+      if(payload.file==undefined && payload.json==undefined){
+        p = invoke.put(payload.url,payload.headers)
+      }
+      break;
+    case "delete":
+      p = invoke.delete(payload.url,payload.headers)
+      break;
     default:
       break;
   }
-  return p.then(b=>{validate(check,b,bags)}).catch(console.error)
+  return new Promise(function(resolve, reject){
+    p.then(b=>{var v = validate(check,b,bags);ret.end=new Date();ret.duration = ret.end-ret.start; ret.asserts = v.asserts;ret.valid = v.valid; resolve(ret)}).catch(e=>{console.error(e);reject(e)})
+  })
 }
 
 function override(json, override) {
@@ -90,9 +144,6 @@ function override(json, override) {
     return json
   }
 }
-
-
-
 
 function all_tests(proj){
   config = requireFromRoot("./" + proj + '/config/index.js')
@@ -118,6 +169,7 @@ requireFromRoot = (function(root) {
 })(__dirname);
 
 function test_run(file){
+  var test_log = {steps:[],errors:[],start:new Date(),end:""}
   try {
     var test_stream = fs.readFileSync(file, 'utf8');
     var yml  = replace_yml(test_stream)
@@ -131,7 +183,6 @@ function test_run(file){
     if(doc.iterate !=undefined) {
       blocks = requireFromRoot(config.modelFolder + doc.iterate)
     }
-
     blocks.forEach(block=>{
       doc.steps.forEach(s=>{
         var iterations = [0]
@@ -139,15 +190,25 @@ function test_run(file){
           iterations = requireFromRoot(config.modelFolder + s.iterate)
         }
         iterations.forEach((i,j)=>{
-          result = result.then(()=>stephandler(s,[collect_bag,block,i]));
+          result = result.then(x=>{
+            return stephandler(s,[collect_bag,block,i])
+          }).then(x=>{
+            test_log.steps.push(x);
+            console.log(x);
+          }).catch(e=>{
+            test_log.errors.push(e);
+          });
         })
       })
     })
-
+    result.then(r=>{
+      test_log.end = new Date();
+      test_log.duration = test_log.end-test_log.start;
+      console.log(test_log)
+    })
   } catch (e) {
     console.error(e);
   }
-
   return result
 }
 

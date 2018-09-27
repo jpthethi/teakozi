@@ -42,6 +42,27 @@ this.post = function (url,headers,msg){
   return post_generic(url,headers,msg,options)
 }
 
+this.put = function (url,headers,msg){
+  var options = {
+    url : url,
+    method: 'PUT',
+    headers:headers
+  };
+  if(msg !=undefined) {options.body = msg}
+  return post_generic(url,headers,msg,options)
+}
+
+this.put_json = function (url,headers,msg){
+  var options = {
+    url : url,
+    method: 'PUT',
+    headers:headers,
+    body: msg,
+    json:true
+  };
+  return post_generic(url,headers,msg,options)
+}
+
 function post_generic(url,headers,msg,options){
   return new Promise((resolve,reject)=>{
     request(options, function (error, response, body) {
