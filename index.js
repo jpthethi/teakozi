@@ -9,7 +9,7 @@ var colors = require('colors');
 function assert_eq(lhs, rhs, message,add){
   var assertObj={}
   assertObj.valid = (lhs==rhs)
-  assertObj.detail = "Expected " + message +" : "+ lhs + " got " + rhs;
+  assertObj.detail = "Expected " + message + " : " + lhs + " got " + rhs;
   assertObj.message = ("Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
   if(add!=undefined) add(assertObj)
 }
@@ -17,9 +17,30 @@ function assert_eq(lhs, rhs, message,add){
 function assert_neq(lhs, rhs, message, add){
   var assertObj={}
   assertObj.valid = (lhs!=rhs)
-  assertObj.detail = "Not expected " + message + lhs + " got " + rhs ;
+  assertObj.detail = "Not expected " + message + " : " + lhs + " got " + rhs ;
   assertObj.message = "Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red)
   if(add!=undefined) add(assertObj)
+}
+
+function assert_null(lhs, message, add){
+  var assertObj={}
+  assertObj.valid = (lhs[0]==undefined)
+  assertObj.detail = "Expected " + message + " to be null" ;
+  assertObj.message = "Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red)
+  if(add!=undefined) add(assertObj)
+}
+
+
+function collect(collect,res,bags){
+  if( collect==undefined ) return;
+  if(bags.length > 0 ){
+    var collect_bag = bags[0];
+    if(collect!=undefined){
+      Object.keys(collect).forEach(v=>{
+        collect_bag[v] = jp.query(res.body, collect[v])[0]
+      })
+    }
+  }
 }
 
 function validate(c,res,bags){
@@ -27,6 +48,7 @@ function validate(c,res,bags){
     asserts:[],
     valid : true
   }
+  if(c==undefined) return ret
 
   var add = function(assertObj){
     ret.asserts.push(assertObj);
@@ -35,7 +57,9 @@ function validate(c,res,bags){
     ret.valid = ret.valid && assertObj.valid;
   }
 
-  assert_eq(res.status,c.status,"statuscode",add)
+  if(c.status!=undefined){
+    assert_eq(res.status,overlay.layer(c.status, config, bags),"statuscode",add)
+  }
   if(c.body==undefined) return ret
 
   var eq = c.body.eq;
@@ -52,16 +76,11 @@ function validate(c,res,bags){
     })
   }
 
-  var collect = c.body.collect;
-  if(bags.length >0 ){
-    var collect_bag = bags[0];
-
-    if(collect!=undefined){
-      Object.keys(collect).forEach(v=>{
-        collect_bag[v] = jp.query(res.body, collect[v])[0]
-      })
-      console.log(collect_bag)
-    }
+  var check_null = c.body.null;
+  if(check_null!=undefined){
+    check_null.forEach(v=>{
+      assert_null(jp.query(res.body, v),v,add)
+    })
   }
   return ret;
 }
@@ -81,6 +100,15 @@ function stephandler(s,bags){
   ret.name = name
   console.log(("Test: -------"+name+"-----------").cyan)
   payload.url = overlay.layer(payload.url,config, bags)
+
+  //overlay headers
+  if(payload.headers != undefined){
+    Object.keys(payload.headers).forEach(h=>{
+      payload.headers[h] = overlay.layer(payload.headers[h],config, bags)
+    })
+  }
+
+
   ret.url = payload.url;
   ret.method = intent;
   console.log(ret.method + " " + ret.url)
@@ -135,9 +163,18 @@ function stephandler(s,bags){
   }
   return new Promise(function(resolve, reject){
     p
-    .then(b=>{var v = validate(check,b,bags);ret.end=new Date();ret.duration = ret.end-ret.start; ret.asserts = v.asserts;ret.valid = v.valid; resolve(ret)})
+    .then(b=>{debug_print(s.print,b); collect(s.collect,b,bags); var v = validate(check,b,bags);ret.end=new Date();ret.duration = ret.end-ret.start; ret.asserts = v.asserts;ret.valid = v.valid; resolve(ret)})
     .catch(e=>{ret.error = e; reject(ret)})
   })
+}
+
+function debug_print(print,res){
+  if(print!=undefined){
+    print.forEach(v=>{
+      if(v=="status") {console.log(v + " : " + res.status)}
+      else {console.log(v + " : " + jp.query(res.body, v))}
+    })
+  }
 }
 
 function override(json, override) {

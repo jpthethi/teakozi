@@ -74,6 +74,8 @@ require("teakozi").start("project/example")
 |name|required|string|Name of the Test Step |
 |iterate|optional|string|name of the module that returns array of objects. the call will get repeated for each of the members of the returned array |
 |check|required|object|what to do with the response recieved. What asserts to do and what properties to pick from the response to be used in subsequent calls|
+|collect|optional|object|the jsonpaths values that should be collected for use in subsequent calls. |
+|print|optional|array|the jsonpaths values that should be printed on the console output for debugging purposes |
 
 ### get / post / put / delete
 | Property |required| type | Purpose|
@@ -97,13 +99,37 @@ post:
       User-Agent: Teakozi-test
 ```
 
+### collect
+Collects the propoerties from the payload response that would be used in the subsequent steps
+```sh
+    collect:
+     title: $..[0].name
+     project_id: $..[0].id
+```
+
+### print
+Enables debugging of the call by printing the jsonpaths from the response
+
+```sh
+  - get:
+     url: "http://localhost:3060/k.json"
+    name: "Get Auth K"
+    print:
+     - status
+     - $.mykey
+    check:
+     status: 200
+    collect:
+     auth_key: $.mykey
+```
+
 ### check
 | Property |required| type | Purpose|
 | - | - |-|-|
 |status|optional|number|what status code is expected in response |
 |eq|optional|object|the jsonpaths that should be equal to |
 |neq|optional|object|the jsonpaths that should notbe equal to |
-|collect|optional|object|the jsonpaths values that should be collected for use in subsequent calls. |
+|null|optional|array|the jsonpaths that should be null |
 
 ```sh
     check:
@@ -114,9 +140,10 @@ post:
        $..[0].name: "devops_best_practices"
       neq:
        $.length: 0
-      collect:
-       title: $..[0].name
-       project_id: $..[0].id
+      null:
+       - $.nonexistant
+       - $.someother_nonexistant
+
 
 ```
 
