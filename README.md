@@ -72,6 +72,7 @@ require("teakozi").start("project/example")
 | - | - |-|-|
 |get / post / put / delete|required|object|method to be called |
 |name|required|string|Name of the Test Step |
+|delay|optional|int|Delay in seconds to start this step |
 |iterate|optional|string|name of the module that returns array of objects. the call will get repeated for each of the members of the returned array |
 |check|required|object|what to do with the response recieved. What asserts to do and what properties to pick from the response to be used in subsequent calls|
 |collect|optional|object|the jsonpaths values that should be collected for use in subsequent calls. |

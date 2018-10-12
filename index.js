@@ -163,18 +163,35 @@ function stephandler(s,bags){
   }
   return new Promise(function(resolve, reject){
     p
-    .then(b=>{debug_print(s.print,b); collect(s.collect,b,bags); var v = validate(check,b,bags);ret.end=new Date();ret.duration = ret.end-ret.start; ret.asserts = v.asserts;ret.valid = v.valid; resolve(ret)})
+    .then(b=>{
+      ret.debug_prints = debug_print(s.print,b);
+      collect(s.collect,b,bags);
+      var v = validate(check,b,bags);
+      ret.end=new Date();
+      ret.duration = ret.end-ret.start;
+      ret.asserts = v.asserts;
+      ret.valid = v.valid;
+      resolve(ret)})
     .catch(e=>{ret.error = e; reject(ret)})
   })
 }
 
 function debug_print(print,res){
+  var ret = []
   if(print!=undefined){
     print.forEach(v=>{
-      if(v=="status") {console.log(v + " : " + res.status)}
-      else {console.log(v + " : " + jp.query(res.body, v))}
+      var msg;
+      if(v=="status") {
+        msg = v + " : " + res.status
+      }
+      else {
+        msg = v + " : " + jp.query(res.body, v)
+      }
+      console.log(msg);
+      ret.push(msg);
     })
   }
+  return ret
 }
 
 function override(json, override) {
@@ -246,7 +263,10 @@ function test_run(file){
         iterations.forEach((i,j)=>{
           var cloned_step = JSON.parse(JSON.stringify(s))
           result = result.then(x=>{
-            return stephandler(cloned_step,[collect_bag,block,i])
+            var delay_secs = cloned_step.delay!=undefined?cloned_step.delay*1000:0
+            return delay(delay_secs).then(function(){
+              return stephandler(cloned_step,[collect_bag,block,i])
+            })
           }).then(x=>{
             test_log.steps.push(x);
           }).catch((x)=>{
@@ -261,16 +281,13 @@ function test_run(file){
       test_log.end = new Date();
       test_log.duration = test_log.end-test_log.start;
 
-      /*
-      var ts = new Date();
-      fs.writeFile(config.logFolder+ts, JSON.stringify(test_log)+".json", (err) => {
+      var ts = date_stamp(new Date());
+      fs.writeFile(config.logFolder+ts+".json", JSON.stringify(test_log), (err) => {
         if(err) console.log(err);
         console.log('The file has been saved!');
       });
-      */
-
-      console.log("-----------Test Log------------")
-      console.log(test_log)
+      //console.log("-----------Test Log------------")
+      //console.log(test_log)
     })
   } catch (e) {
     console.error(e);
@@ -278,6 +295,14 @@ function test_run(file){
   return result
 }
 
+function delay(t, v) {
+  if(t>0){
+    console.log("-------Delay "+ (t/1000) +" seconds -------")
+  }
+ return new Promise(function(resolve) {
+   setTimeout(resolve.bind(null, v), t)
+ });
+}
 
 function replace_yml(from) {
   var patt1 = /\{\{\w+\}\}/g;
@@ -303,5 +328,19 @@ function include(file){
   ls[0]=ls[0].trim();
   return ls.join("\n")
 }
+
+function date_stamp(dt) {
+  var dd = dt.getDate();
+  var mm = dt.getMonth()+1;
+  var yy = dt.getFullYear();
+  var hh = dt.getHours()
+  var m = dt.getMinutes()
+  var s = dt.getSeconds()
+  if(dd<10) { dd='0'+dd; }
+  if(mm<10) { mm='0'+mm; }
+  return ""+yy+mm+dd+"_"+hh + m + s
+
+}
+
 
 exports.start = all_tests
