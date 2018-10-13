@@ -87,7 +87,7 @@ function validate(c,res,bags){
 
 function stephandler(s,bags){
   var ret = {
-    start:new Date,
+    start:new Date(),
     end:"",
     valid: false,
     error:undefined
@@ -240,7 +240,7 @@ var requireFromRoot = (function(root) {
 })(__dirname);
 
 function test_run(file){
-  var test_log = {steps:[],errors:[],start:new Date(),end:""}
+  var test_log = {steps:[],errors:[],start:new Date(),end:"",valid:true}
   try {
     var test_stream = fs.readFileSync(file, 'utf8');
     var yml  = replace_yml(test_stream)
@@ -263,13 +263,20 @@ function test_run(file){
         iterations.forEach((i,j)=>{
           var cloned_step = JSON.parse(JSON.stringify(s))
           result = result.then(x=>{
+            if (!test_log.valid && cloned_step.skip_on_error!=false) {
+              var ret = {"message":"Skipping step : " + cloned_step.name}
+              console.log(ret.message)
+              return Promise.resolve(ret)
+            }
             var delay_secs = cloned_step.delay!=undefined?cloned_step.delay*1000:0
             return delay(delay_secs).then(function(){
               return stephandler(cloned_step,[collect_bag,block,i])
             })
           }).then(x=>{
+            if(x.valid == false) { test_log.valid = false }
             test_log.steps.push(x);
           }).catch((x)=>{
+            test_log.valid = false;
             console.error("Error".red)
             console.error((x.error))
             test_log.steps.push(x);
@@ -286,8 +293,6 @@ function test_run(file){
         if(err) console.log(err);
         console.log('The file has been saved!');
       });
-      //console.log("-----------Test Log------------")
-      //console.log(test_log)
     })
   } catch (e) {
     console.error(e);

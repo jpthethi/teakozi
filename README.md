@@ -77,6 +77,7 @@ require("teakozi").start("project/example")
 |check|required|object|what to do with the response recieved. What asserts to do and what properties to pick from the response to be used in subsequent calls|
 |collect|optional|object|the jsonpaths values that should be collected for use in subsequent calls. |
 |print|optional|array|the jsonpaths values that should be printed on the console output for debugging purposes |
+|skip_on_error|optional|bool| Default: true. If entered false, it will execute the step even if the previous steps have failed. Can be used to do cleanup / teardown activities |
 
 ### get / post / put / delete
 | Property |required| type | Purpose|
