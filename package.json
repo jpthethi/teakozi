@@ -1,6 +1,6 @@
 {
   "name": "teakozi",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Declaritive REST API Testing framework",
   "main": "index.js",
   "scripts": {
