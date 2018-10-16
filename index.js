@@ -37,7 +37,9 @@ function collect(collect,res,bags){
     var collect_bag = bags[0];
     if(collect!=undefined){
       Object.keys(collect).forEach(v=>{
-        collect_bag[v] = jp.query(res.body, collect[v])[0]
+        v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
+        var what_to_collect = overlay.layer(collect[v], {}, bags)
+        collect_bag[v] = jp.query(res.body, what_to_collect)[0]
       })
     }
   }
@@ -65,6 +67,7 @@ function validate(c,res,bags){
   var eq = c.body.eq;
   if(eq!=undefined){
     Object.keys(eq).forEach(v=>{
+      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
       assert_eq(jp.query(res.body, v),overlay.layer(eq[v], config, bags),v,add)
     })
   }
@@ -72,6 +75,7 @@ function validate(c,res,bags){
   var neq = c.body.neq;
   if(neq!=undefined){
     Object.keys(neq).forEach(v=>{
+      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
       assert_neq(jp.query(res.body, v),overlay.layer(neq[v], config, bags),v,add)
     })
   }
@@ -79,6 +83,7 @@ function validate(c,res,bags){
   var check_null = c.body.null;
   if(check_null!=undefined){
     check_null.forEach(v=>{
+      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
       assert_null(jp.query(res.body, v),v,add)
     })
   }
@@ -164,7 +169,7 @@ function stephandler(s,bags){
   return new Promise(function(resolve, reject){
     p
     .then(b=>{
-      ret.debug_prints = debug_print(s.print,b);
+      ret.debug_prints = debug_print(s.print,b,{},bags); // get config also here for now {}
       collect(s.collect,b,bags);
       var v = validate(check,b,bags);
       ret.end=new Date();
@@ -176,7 +181,7 @@ function stephandler(s,bags){
   })
 }
 
-function debug_print(print,res){
+function debug_print(print,res, config, bags){
   var ret = []
   if(print!=undefined){
     print.forEach(v=>{
@@ -185,6 +190,7 @@ function debug_print(print,res){
         msg = v + " : " + res.status
       }
       else {
+        v=overlay.layer(v, config, bags)
         msg = v + " : " + jp.query(res.body, v)
       }
       console.log(msg);
@@ -255,7 +261,7 @@ function test_run(file){
       blocks = requireFromRoot(config.modelFolder + doc.iterate)
     }
     blocks.forEach(block=>{
-      if(doc.name!=undefined) console.log(("Test: -------" + doc.name + "-----------").cyan)
+      if(doc.name!=undefined) console.log(("Test: -------" + doc.name + "-----------").blue)
       var step_sno = 0;
       doc.steps.forEach(s=>{
         var iterations = [0]
