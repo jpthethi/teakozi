@@ -228,12 +228,24 @@ function all_tests(proj,dir){
   if (!fs.existsSync(config.logFolder)){
     fs.mkdirSync(config.logFolder);
   }
-
+  var test_context = {tests:[]}
+  test_context.start = new Date();
+  test_context.id = date_stamp(new Date())
+  fs.mkdirSync(config.logFolder+test_context.id)
   // do it for all the files in test folder
   fs.readdir(config.testFolder, (err, files) => {
     var result = Promise.resolve();
     files.forEach(file => {
-      result = result.then(()=>test_run(config.testFolder  + file));
+      result = result.then(()=>test_run(config.testFolder  + file,test_context))
+    })
+    result.then(()=>{
+      test_context.end = new Date();
+      test_context.duration = test_context.end-test_context.start;
+
+      fs.writeFile(config.logFolder+test_context.id+"/all.json", JSON.stringify(test_context), (err) => {
+        if(err) console.log(err);
+        console.log('The all file has been saved!');
+      });
     });
   })
 }
@@ -245,8 +257,8 @@ var requireFromRoot = (function(root) {
     }
 })(__dirname);
 
-function test_run(file){
-  var test_log = {steps:[],errors:[],start:new Date(),end:"",valid:true}
+function test_run(file, test_context){
+  var test_log = {steps:[],errors:[],start:new Date(),end:"",valid:true, test_file: file}
   try {
     var test_stream = fs.readFileSync(file, 'utf8');
     var yml  = replace_yml(test_stream)
@@ -254,6 +266,7 @@ function test_run(file){
     //one more time if there are any placeholders from the modules
     yml  = overlay.layer(yml,config)
     var doc = yaml.safeLoad(yml);
+    test_log.name = doc.name;
     var result = Promise.resolve();
     var collect_bag = {}
     var blocks = [0]
@@ -297,10 +310,13 @@ function test_run(file){
       test_log.end = new Date();
       test_log.duration = test_log.end-test_log.start;
 
-      var ts = date_stamp(new Date());
-      fs.writeFile(config.logFolder+ts+".json", JSON.stringify(test_log), (err) => {
+      test_log.logfile = date_stamp(new Date()) + ".json";
+      test_log.logfile_fullpath = config.logFolder + test_context.id + "/" + test_log.logfile;
+      test_context.tests.push(test_log)
+      fs.writeFile(test_log.logfile_fullpath, JSON.stringify(test_log), (err) => {
         if(err) console.log(err);
         console.log('The file has been saved!');
+        return Promise.resolve()
       });
     })
   } catch (e) {
