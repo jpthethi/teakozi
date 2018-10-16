@@ -98,7 +98,7 @@ function stephandler(s,bags){
   var name = overlay.layer(s.name, config, bags);
   var payload = s[intent];
   ret.name = name
-  console.log(("Test: -------"+name+"-----------").cyan)
+  if(name!=undefined) console.log(("Step "+s.step_sno+": -------"+name+"-----------").cyan)
   payload.url = overlay.layer(payload.url,config, bags)
 
   //overlay headers
@@ -255,6 +255,8 @@ function test_run(file){
       blocks = requireFromRoot(config.modelFolder + doc.iterate)
     }
     blocks.forEach(block=>{
+      if(doc.name!=undefined) console.log(("Test: -------" + doc.name + "-----------").cyan)
+      var step_sno = 0;
       doc.steps.forEach(s=>{
         var iterations = [0]
         if(s.iterate!=undefined){
@@ -262,6 +264,7 @@ function test_run(file){
         }
         iterations.forEach((i,j)=>{
           var cloned_step = JSON.parse(JSON.stringify(s))
+          cloned_step.step_sno = ++step_sno
           result = result.then(x=>{
             if (!test_log.valid && cloned_step.skip_on_error!=false) {
               var ret = {"message":"Skipping step : " + cloned_step.name}
