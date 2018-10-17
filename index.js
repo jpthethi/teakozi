@@ -191,7 +191,10 @@ function debug_print(print,res, config, bags){
       }
       else {
         v=overlay.layer(v, config, bags)
-        msg = v + " : " + jp.query(res.body, v)
+        var echo = jp.query(res.body, v)[0]
+        msg = v + " : " + JSON.stringify(echo)
+        msgObj = {}
+        msgObj[v] = echo
       }
       console.log(msg);
       ret.push(msg);
