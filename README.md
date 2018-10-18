@@ -33,11 +33,11 @@ create a directory in your project consisting of the following subdirectories
 
 | Directory | Purpose|
 |-|-|
-|tests|contains the yml files that describe the tests|
+|tests|contains the yml files that describe the tests. You can arrange the test yml files in any suitable folder hiererchy. the framework will get all yml files in directory under this tree and ignore all the non .yml files|
 |modules|reusable test steps that can be refered in the test yml file|
 |models|externalize the data to drive the tests|
 |config|just one index.js file that contains key value for replacing in the test yml files|
-|payload|the body of the content that can be called in a post step|
+|payload|the body of the content that can be called in a post step. This folder also contains the json payload against which you need to validate your responses. |
 
 see the example folder in the repo for reference. you need to update the config/index.js with your github auth to
 
@@ -64,13 +64,14 @@ require("teakozi").start("project/example")
 | Property |required| type | Purpose|
 | - | - |-|-|
 |name|required|string|Name of the Test Case |
+|tags|optional|string|comma saperated list of tags for the test. you can use thse tags to filter / select the test you would like to take for a test run |
 |iterate|optional|string|Name of the module file that returns an array of objects. The test steps defined will be repeated for all the elements of this array |
 |steps|required|array|See Steps Section|
 
 ### Steps
 | Property |required| type | Purpose|
 | - | - |-|-|
-|get / post / put / delete|required|object|method to be called |
+|get / post / put / delete / local |required|object|method to be called |
 |name|required|string|Name of the Test Step |
 |delay|optional|int|Delay in seconds to start this step |
 |iterate|optional|string|name of the module that returns array of objects. the call will get repeated for each of the members of the returned array |
@@ -88,6 +89,12 @@ require("teakozi").start("project/example")
 |override|na -get, optional - for post, optional - put, na - delete |array|  jsonpaths that need to be updated with value |
 |headers|optional -get, optional - for post, optional - put, optional - delete |array| headers that go on the http requests. like Authorization content-type etc |
 
+### local
+| Property |required| type | Purpose|
+| - | - |-|-|
+|file|required|string| name of the file in the payload folder |
+
+
 example:
 ```sh
 post:
@@ -101,6 +108,12 @@ post:
       User-Agent: Teakozi-test
 ```
 
+or for local file reading
+```sh
+local:
+    file: roads
+```
+
 ### collect
 Collects the propoerties from the payload response that would be used in the subsequent steps
 ```sh
@@ -108,6 +121,14 @@ Collects the propoerties from the payload response that would be used in the sub
      title: $..[0].name
      project_id: $..[0].id
 ```
+
+collect also supports reading complete or subset of json recieved like
+```sh
+    collect:
+     all_roads: $..Name
+```
+
+this will collect all the Name fields comming at any part of the json. using JSON path expression on the right hand side you can collect specific sections of json for comparision
 
 ### print
 Enables debugging of the call by printing the jsonpaths from the response
@@ -125,6 +146,15 @@ Enables debugging of the call by printing the jsonpaths from the response
      auth_key: $.mykey
 ```
 
+print also supports checking the objects / subset of json as defined by json path like
+
+    print:
+     - status # status of the header
+     - $..Name # All names appearing in the json
+     - $[0].Name # Prints name value of the first record
+     - $ # Prints complete JSON
+
+
 ### check
 | Property |required| type | Purpose|
 | - | - |-|-|
@@ -132,6 +162,7 @@ Enables debugging of the call by printing the jsonpaths from the response
 |eq|optional|object|the jsonpaths that should be equal to |
 |neq|optional|object|the jsonpaths that should notbe equal to |
 |null|optional|array|the jsonpaths that should be null |
+|deepEqual| optional|array| The jsonpaths and what collected objects to check against.
 
 ```sh
     check:
@@ -145,10 +176,37 @@ Enables debugging of the call by printing the jsonpaths from the response
       null:
        - $.nonexistant
        - $.someother_nonexistant
+      deepEqual:
+        $: full_roads_payload
+        $..Name: all_roads
+```
+where full_roads_payload is collected in a previous step
 
 
+# Running your test suits
+create an node project and include teazoki using
+```sh
+$ npm install teakozi
 ```
 
-License
-----
+in your index.js file
+```sh
+var tags_list = "a,b,c,d"
+require("teakozi").start("project/github",working dir,{tag:tags_list})
+```
+run the test cases
+```sh
+$ node index.js
+```
+
+The test logs are shown on screen and the logs are written into the project directory/log with a timestamped folder containing all and individual test run information
+
+# Teakozi-Viewer
+This supporting project enables you to view the HTML reports from the collected logs in the log directory (all.js). Please clone and install from the following github repository https://github.com/jpthethi/teakozi-viewer
+
+
+# Feedback
+Please submit your suggestions / bugs via Github. You are welcome to fork and submit back your pull requests
+
+# License
 ISC

@@ -5,6 +5,7 @@ var overlay = require("./overlay")
 var config ;
 var jp = require("jsonpath")
 var colors = require('colors');
+const assert = require('assert');
 
 function assert_eq(lhs, rhs, message,add){
   var assertObj={}
@@ -18,6 +19,20 @@ function assert_neq(lhs, rhs, message, add){
   var assertObj={}
   assertObj.valid = (lhs!=rhs)
   assertObj.detail = "Not expected " + message + " : " + lhs + " got " + rhs ;
+  assertObj.message = "Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red)
+  if(add!=undefined) add(assertObj)
+}
+
+function assert_deq(lhs, rhs, message, add){
+  var assertObj={}
+  try {
+    assert.deepEqual(lhs,rhs);
+    assertObj.valid = true
+  } catch(e){
+    assertObj.valid = false
+    assertObj.errDetails = {type:"object_compare", expected:e.expected, actual: e.actual,}
+  }
+  assertObj.detail = "Deep Equal " + message ;
   assertObj.message = "Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red)
   if(add!=undefined) add(assertObj)
 }
@@ -38,7 +53,7 @@ function collect(collect,res,bags){
       Object.keys(collect).forEach(v=>{
         v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
         var what_to_collect = overlay.layer(collect[v], {}, bags)
-        collect_bag[v] = slice_pick(jp.query(res.body, what_to_collect))
+        collect_bag[v] = jp.query(res.body, what_to_collect)
       })
     }
   }
@@ -79,6 +94,19 @@ function validate(c,res,bags){
     })
   }
 
+  var deq = c.body.deepEqual;
+  if( deq!=undefined){
+    Object.keys(deq).forEach(v=>{
+      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
+      var out = deq[v]
+      var keep_looking = true;
+      bags.forEach(bag=>{
+        if(bag[out]!=undefined && keep_looking) {out = bag[out] ; keep_looking=false}
+      })
+      assert_deq(jp.query(res.body, v),out,v,add)
+    })
+  }
+
   var check_null = c.body.null;
   if(check_null!=undefined){
     check_null.forEach(v=>{
@@ -113,11 +141,14 @@ function stephandler(s,bags){
   }
 
 
-  ret.url = payload.url;
+  ret.url = payload.url || payload.file;
   ret.method = intent;
   console.log(ret.method + " " + ret.url)
   var p = Promise.resolve()
   switch(intent){
+    case "local":
+      p = invoke.local(payload.file + ".json",config.payloadFolder)
+      break;
     case "get":
       p = invoke.get(payload.url,payload.headers)
       break;
@@ -181,8 +212,9 @@ function stephandler(s,bags){
 }
 
 function slice_pick(echo){
-  if(Array.isArray(echo[0])) {echo = echo[0]}
-  return echo;
+  if(Array.isArray(echo[0])) {ret = echo[0]}
+  else ret = echo
+  return ret;
 }
 
 function debug_print(print,res, config, bags){
@@ -217,6 +249,8 @@ function override(json, override) {
 }
 
 function all_tests(proj,dir,options){
+  if(options == undefined) {options={};options.tag=""}
+
   if(dir!=undefined){
     requireFromRoot = (function(root) {
       return function(resource) {
@@ -319,8 +353,8 @@ function test_run(file, test_context){
     result.then(r=>{
       test_log.end = new Date();
       test_log.duration = test_log.end-test_log.start;
-
-      test_log.logfile = date_stamp(new Date()) + ".json";
+      var rand = Math.ceil(100*Math.random())
+      test_log.logfile =  date_stamp(new Date()) + ".json";
       test_log.logfile_fullpath = config.logFolder + test_context.id + "/" + test_log.logfile;
       test_context.tests.push(test_log)
       fs.writeFile(test_log.logfile_fullpath, JSON.stringify(test_log), (err) => {

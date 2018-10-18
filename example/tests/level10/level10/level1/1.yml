@@ -1,0 +1,16 @@
+---
+name: "Test Case - Post Gist to Git"
+tags: basic,low_priority,dev
+iterate: "many_runs"
+steps:
+  #first get auth key
+  - get:
+     url: "{{local_traffic_server}}/k.json"
+    name: "Get Auth K"
+    print:
+     - status
+     - $.~key_name~
+    check:
+     status: 200
+    collect:
+     auth_key: $.~key_name~

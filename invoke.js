@@ -1,4 +1,17 @@
 var request = require('request');
+var fs = require("fs")
+var path = require("path")
+
+this.local = function (file,dir) {
+  return new Promise((resolve,reject)=>{
+    fs.readFile(dir+file, function(error,body){
+      if (error) { reject(error) }
+      else {
+        resolve({body:JSON.parse(body)})
+      }
+    });
+  })
+}
 
 this.get = function (url,headers){
   return new Promise((resolve,reject)=>{

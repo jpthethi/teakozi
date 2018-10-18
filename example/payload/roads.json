@@ -1,0 +1,25 @@
+[{
+  "id": "HSR",
+  "Name": "HSR",
+  "color": "yellow",
+  "orientation": 0,
+  "signal": false
+}, {
+  "id": "ECity",
+  "Name": "ECity",
+  "color": "blue",
+  "orientation": 90,
+  "signal": false
+}, {
+  "id": "Madivala",
+  "Name": "Madivala",
+  "color": "pink",
+  "orientation": 180,
+  "signal": false
+}, {
+  "id": "BTM",
+  "Name": "BTM",
+  "color": "orange",
+  "orientation": 270,
+  "signal": false
+}]

@@ -1,0 +1,29 @@
+---
+name: "Get Roads and Cars"
+tags: cars
+steps:
+  - local:
+     file: roads
+    name: "Roads Expected JSON"
+    print:
+     - $..Name
+     - $
+    collect:
+     all_roads: $..Name
+     full_roads_payload: $
+  - get:
+     url: "{{local_traffic_server}}/roads"
+    name: "Roads Service"
+    print:
+     - status
+     - $..Name
+     - $[0].Name
+     - $
+    check:
+     status: 200
+     body:
+       eq:
+         $[0].Name: "HSR"
+       deepEqual:
+         $: full_roads_payload
+         $..Name: all_roads

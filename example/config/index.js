@@ -1,4 +1,4 @@
-//replace the auth mechanism for your github account
 module.exports = {
-  auth: "___________"
-}
+  local_traffic_server:'http://localhost:3060',
+  github_api:"https://api.github.com"
+};

@@ -1,35 +1,59 @@
 ---
 name: "Test Case - Post Gist to Git"
+tags: github, need_local_server
 iterate: "many_runs"
 steps:
+  #first get auth key
+  - get:
+     url: "{{local_traffic_server}}/k.json"
+    name: "Get Auth K"
+    print:
+     - status
+     - $.~key_name~
+    check:
+     status: 200
+    collect:
+     auth_key: $.~key_name~
+
+  #now call post gist
   - post:
-     url: "https://api.github.com/gists"
+     url: "{{github_api}}/gists"
      json: "create_gist.json"
      override:
       $.description: ~title~
      headers:
-      Authorization: {{auth}}
+      Authorization: ~auth_key~
       content-type: application/json
       User-Agent: teapot-test
     name: "Post a Gist"
+    print:
+      - status
+      - $
+      - $.description
+      - $.nonexistant
+      - $.~key_name~
     check:
      status: 201
      body:
       eq:
        $.description: ~title~
-      collect:
-       gist_id: $.id
+      null:
+       - $.nonexistant
+       - $.~key_name~
+    collect:
+     gist_id: $.id
 
   - post:
-     url: "https://api.github.com/gists/~gist_id~/comments"
+     url: "{{github_api}}/gists/~gist_id~/comments"
      json: "create_comment.json"
      override:
       $.body: ~comment_text~
      headers:
-      Authorization: {{auth}}
+      Authorization: ~auth_key~
       content-type: application/json
       User-Agent: teapot-test
     iterate: "many_comments"
     name: "Post a comment on gist ~gist_id~"
+    skip_on_error: false
     check:
      status: 201
