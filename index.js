@@ -30,7 +30,6 @@ function assert_null(lhs, message, add){
   if(add!=undefined) add(assertObj)
 }
 
-
 function collect(collect,res,bags){
   if( collect==undefined ) return;
   if(bags.length > 0 ){
@@ -212,7 +211,7 @@ function override(json, override) {
   }
 }
 
-function all_tests(proj,dir){
+function all_tests(proj,dir,options){
   if(dir!=undefined){
     requireFromRoot = (function(root) {
       return function(resource) {
@@ -228,29 +227,31 @@ function all_tests(proj,dir){
   config.modelFolder = "./"+proj+"/models/"
   config.logFolder = "./"+proj+"/logs/"
 
+  var files = require("./candidates").file_list(config.testFolder,options.tag)
+  console.log("Filtered " + files.length + " tests matching tags")
+  console.log(files)
+
   if (!fs.existsSync(config.logFolder)){
     fs.mkdirSync(config.logFolder);
   }
-  var test_context = {tests:[]}
+  var test_context = {tags:options.tag, tests:[]}
   test_context.start = new Date();
   test_context.id = date_stamp(new Date())
   fs.mkdirSync(config.logFolder+test_context.id)
   // do it for all the files in test folder
-  fs.readdir(config.testFolder, (err, files) => {
-    var result = Promise.resolve();
-    files.forEach(file => {
-      result = result.then(()=>test_run(config.testFolder  + file,test_context))
-    })
-    result.then(()=>{
-      test_context.end = new Date();
-      test_context.duration = test_context.end-test_context.start;
-
-      fs.writeFile(config.logFolder+test_context.id+"/all.json", JSON.stringify(test_context), (err) => {
-        if(err) console.log(err);
-        console.log('The all file has been saved!');
-      });
-    });
+  var result = Promise.resolve();
+  files.forEach(file => {
+    result = result.then(()=>test_run("./" +file,test_context))
   })
+  result.then(()=>{
+    test_context.end = new Date();
+    test_context.duration = test_context.end-test_context.start;
+
+    fs.writeFile(config.logFolder+test_context.id+"/all.json", JSON.stringify(test_context), (err) => {
+      if(err) console.log(err);
+      console.log('The all file has been saved!');
+    });
+  });
 }
 
 var requireFromRoot = (function(root) {
@@ -270,6 +271,7 @@ function test_run(file, test_context){
     yml  = overlay.layer(yml,config)
     var doc = yaml.safeLoad(yml);
     test_log.name = doc.name;
+    test_log.tags = doc.tags
     var result = Promise.resolve();
     var collect_bag = {}
     var blocks = [0]
@@ -371,9 +373,11 @@ function date_stamp(dt) {
   var s = dt.getSeconds()
   if(dd<10) { dd='0'+dd; }
   if(mm<10) { mm='0'+mm; }
+  if(hh<10) { hh='0'+hh; }
+  if(m <10) { m='0'+m; }
+  if(s <10) { s='0'+s; }
   return ""+yy+mm+dd+"_"+hh + m + s
 
 }
-
 
 exports.start = all_tests
