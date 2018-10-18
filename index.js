@@ -38,7 +38,7 @@ function collect(collect,res,bags){
       Object.keys(collect).forEach(v=>{
         v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
         var what_to_collect = overlay.layer(collect[v], {}, bags)
-        collect_bag[v] = jp.query(res.body, what_to_collect)[0]
+        collect_bag[v] = slice_pick(jp.query(res.body, what_to_collect))
       })
     }
   }
@@ -180,6 +180,11 @@ function stephandler(s,bags){
   })
 }
 
+function slice_pick(echo){
+  if(Array.isArray(echo[0])) {echo = echo[0]}
+  return echo;
+}
+
 function debug_print(print,res, config, bags){
   var ret = []
   if(print!=undefined){
@@ -190,7 +195,7 @@ function debug_print(print,res, config, bags){
       }
       else {
         v=overlay.layer(v, config, bags)
-        var echo = jp.query(res.body, v)[0]
+        var echo = slice_pick(jp.query(res.body, v))
         msg = v + " : " + JSON.stringify(echo)
         msgObj = {}
         msgObj[v] = echo
