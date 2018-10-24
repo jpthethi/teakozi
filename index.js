@@ -8,6 +8,15 @@ var colors = require('colors');
 var schemaValidation = require('./schemaValidation');
 const assert = require('assert');
 
+function assert_regex(lhs, rhs, message,add){
+  var assertObj={}
+  var result = lhs.match(rhs);
+  assertObj.valid = (result!=undefined)
+  assertObj.detail = "Expected " + message + " : " + lhs + " got " + rhs;
+  assertObj.message = ("Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
+  if(add!=undefined) add(assertObj)
+}
+
 function assert_eq(lhs, rhs, message,add){
   var assertObj={}
   assertObj.valid = (lhs==rhs)
@@ -101,6 +110,17 @@ function validate(c,res,bags){
     Object.keys(eq).forEach(v=>{
       v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
       assert_eq(jp.query(res.body, v),overlay.layer(eq[v], config, bags),v,add)
+    })
+  }
+
+  var regex = c.body.regex;
+  if(regex!=undefined){
+    Object.keys(regex).forEach(v=>{
+      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
+      var sub = jp.query(res.body, v)
+      //FIX: array or not ?? considering first one now. Hack for now
+      if(sub==sub[0]) sub = sub[0]
+      assert_regex(sub,overlay.layer(regex[v], config, bags),v,add)
     })
   }
 

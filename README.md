@@ -170,6 +170,7 @@ print also supports checking the objects / subset of json as defined by json pat
 |neq|optional|object|the jsonpaths that should notbe equal to |
 |null|optional|array|the jsonpaths that should be null |
 |deepEqual| optional|array| The jsonpaths and what collected objects to check against.
+|regex| optional|array| The jsonpaths and their matching regex. The regex expression can be external mentioned as ~regex_for_currency~ or mentioned inline
 
 ```sh
     check:
@@ -178,6 +179,8 @@ print also supports checking the objects / subset of json as defined by json pat
       eq:
        $.length: 20
        $..[0].name: "devops_best_practices"
+      regex:
+       $.domain: "^Ji[a-z]*"
       neq:
        $.length: 0
       null:
