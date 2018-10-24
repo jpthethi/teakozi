@@ -5,6 +5,7 @@ var overlay = require("./overlay")
 var config ;
 var jp = require("jsonpath")
 var colors = require('colors');
+var schemaValidation = require('./schemaValidation');
 const assert = require('assert');
 
 function assert_eq(lhs, rhs, message,add){
@@ -64,7 +65,8 @@ function validate(c,res,bags){
     asserts:[],
     valid : true
   }
-  if(c==undefined) return ret
+  var retPromise = Promise.resolve(ret)
+  if(c==undefined) return retPromise
 
   var add = function(assertObj){
     ret.asserts.push(assertObj);
@@ -76,8 +78,24 @@ function validate(c,res,bags){
   if(c.status!=undefined){
     assert_eq(res.status,overlay.layer(c.status, config, bags),"statuscode",add)
   }
-  if(c.body==undefined) return ret
 
+  if(c.schema!=undefined){
+    var assertObj={}
+    assertObj.detail = "Schema Match " + c.schema;
+    retPromise = schemaValidation.validate(res.body,c.schema).then(res=>{
+      assertObj.valid = true
+    }).catch(e=>{
+      assertObj.valid = false
+      console.error(e)
+      assertObj.errDetails = {type:"schema_mismatch", errMessage:e}
+    }).then(()=>{
+      assertObj.message = "Assert: " + assertObj.detail + " : " + (assertObj.valid?"PASS".green:"FAIL".red)
+      if(add!=undefined) add(assertObj)
+      return Promise.resolve(ret)
+    })
+  }
+
+  if(c.body==undefined) return retPromise
   var eq = c.body.eq;
   if(eq!=undefined){
     Object.keys(eq).forEach(v=>{
@@ -114,7 +132,7 @@ function validate(c,res,bags){
       assert_null(jp.query(res.body, v),v,add)
     })
   }
-  return ret;
+  return retPromise;
 }
 
 function stephandler(s,bags){
@@ -201,12 +219,15 @@ function stephandler(s,bags){
     .then(b=>{
       ret.debug_prints = debug_print(s.print,b,{},bags); // get config also here for now {}
       collect(s.collect,b,bags);
-      var v = validate(check,b,bags);
-      ret.end=new Date();
-      ret.duration = ret.end-ret.start;
-      ret.asserts = v.asserts;
-      ret.valid = v.valid;
-      resolve(ret)})
+      validate(check,b,bags).then(v=>{
+        ret.end=new Date();
+        ret.duration = ret.end-ret.start;
+        ret.asserts = v.asserts;
+        ret.valid = v.valid;
+        resolve(ret)
+      })
+      .catch(e=>{console.log(e);reject(ret)})
+    })
     .catch(e=>{ret.error = e; reject(ret)})
   })
 }
@@ -265,6 +286,8 @@ function all_tests(proj,dir,options){
   config.payloadFolder = "./"+proj+"/payload/"
   config.modelFolder = "./"+proj+"/models/"
   config.logFolder = "./"+proj+"/logs/"
+
+  if(config.swagger) schemaValidation.setSwagger("./" + proj + config.swagger)
 
   var files = require("./candidates").file_list(config.testFolder,options.tag)
   console.log("Filtered " + files.length + " tests matching tags")
