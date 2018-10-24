@@ -378,6 +378,7 @@ function test_run(file, test_context){
               return Promise.resolve(ret)
             }
             var delay_secs = cloned_step.delay!=undefined?cloned_step.delay*1000:0
+            //TODO: Delay Implementation
             return delay(delay_secs).then(function(){
               return stephandler(cloned_step,[collect_bag,block,i])
             })
