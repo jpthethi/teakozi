@@ -216,7 +216,7 @@ This supporting project enables you to view the HTML reports from the collected 
 
 
 # Feedback
-Please submit your suggestions / bugs via Github. You are welcome to fork and submit back your pull requests
+Please submit your suggestions / bugs via Github. You are welcome to fork and submit back your pull requests.
 
 # License
 ISC
