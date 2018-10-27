@@ -8,12 +8,28 @@ var colors = require('colors');
 var schemaValidation = require('./schemaValidation');
 const assert = require('assert');
 
-function assert_regex(lhs, rhs, message,add){
+function assert_regex(m_lhs, rhs, message,add){
   var assertObj={}
-  var result = lhs.match(rhs);
-  assertObj.valid = (result!=undefined)
-  assertObj.detail = "Expected " + message + " : " + lhs + " got " + rhs;
-  assertObj.message = ("Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
+  assertObj.detailObj = []
+  assertObj.valid = true;
+  assertObj.detail = "Expected Regex Match" + " : " + rhs + " for " + message;
+  assertObj.message = ("Assert Regex: "+ rhs + " for " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
+  var check_reges = function(lhs,rhs){
+    var result = lhs.toString().match(rhs) != undefined ;
+    if(!result){
+      assertObj.valid = false;
+      var msg = lhs + " does not match " + rhs
+      console.log(msg);
+      assertObj.detailObj.push(msg);
+      assertObj.errDetails = {type:"regex_compare", expected:rhs, actual: lhs}
+    }
+  }
+  if(m_lhs==m_lhs[0]) {var lhs = m_lhs[0]; check_reges(lhs,rhs)}
+  else {
+    m_lhs.forEach(lhs=>{
+      check_reges(lhs,rhs)
+    })
+  }
   if(add!=undefined) add(assertObj)
 }
 
@@ -118,8 +134,6 @@ function validate(c,res,bags){
     Object.keys(regex).forEach(v=>{
       v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
       var sub = jp.query(res.body, v)
-      //FIX: array or not ?? considering first one now. Hack for now
-      if(sub==sub[0]) sub = sub[0]
       assert_regex(sub,overlay.layer(regex[v], config, bags),v,add)
     })
   }
