@@ -12,8 +12,6 @@ function assert_regex(m_lhs, rhs, message,add){
   var assertObj={}
   assertObj.detailObj = []
   assertObj.valid = true;
-  assertObj.detail = "Expected Regex Match" + " : " + rhs + " for " + message;
-  assertObj.message = ("Assert Regex: "+ rhs + " for " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
   var check_reges = function(lhs,rhs){
     var result = lhs.toString().match(rhs) != undefined ;
     if(!result){
@@ -30,6 +28,8 @@ function assert_regex(m_lhs, rhs, message,add){
       check_reges(lhs,rhs)
     })
   }
+  assertObj.detail = "Expected Regex Match" + " : " + rhs + " for " + message;
+  assertObj.message = ("Assert Regex: "+ rhs + " for " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
   if(add!=undefined) add(assertObj)
 }
 
@@ -391,11 +391,25 @@ function test_run(file, test_context){
               console.log(ret.message)
               return Promise.resolve(ret)
             }
-            var delay_secs = cloned_step.delay!=undefined?cloned_step.delay*1000:0
-            //TODO: Delay Implementation
-            return delay(delay_secs).then(function(){
+            var delayObj =  {max_loop : 1, secs : 0, cnt : 1}
+            if(cloned_step.delay!=undefined) {
+                var splits = cloned_step.delay.toString().split(",")
+                delayObj.secs = splits[0]*1000;
+                if(splits.length>1) delayObj.max_loop=splits[1]
+            }
+            var step_todo = function(){
               return stephandler(cloned_step,[collect_bag,block,i])
-            })
+            }
+            var delay_do = function(){
+              return delay(delayObj.secs).then(step_todo).then(out=>{
+                if(delayObj.cnt++>=delayObj.max_loop || out.valid == true) {return Promise.resolve(out)}
+                else {
+                  console.log("-------Attempt "+ delayObj.cnt +" of " + delayObj.max_loop + "--------");
+                  return delay_do()
+                }
+              })
+            }
+            return delay_do()
           }).then(x=>{
             if(x.valid == false) { test_log.valid = false }
             test_log.steps.push(x);

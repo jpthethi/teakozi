@@ -10,7 +10,7 @@ const walkSync = (dir, filelist = []) => {
       : filelist.concat(path.join(dir, file));
 
   });
-return filelist;//.filter(file=>{return file.indexOf(".yml")>0});
+  return filelist.filter(file=>{return file.indexOf(".yml")>0});
 }
 
 const filter_file = (dir, tags="") => {

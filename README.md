@@ -66,9 +66,9 @@ you can collect data in a step and reuse in the subsequent steps. so you can col
 | - | - |-|-|
 |get / post / put / delete / local |required|object|method to be called |
 |name|required|string|Name of the Test Step |
-|delay|optional|int|Delay in seconds to start this step |
+|delay|optional|int[,int]|Delay in seconds to start this step. Optionally separated by comma, you can specify how may times should you loop before giving up. Example 3,5 means do the step after 3 seconds delay. if fails then retry for 5 times every 3 seconds. if passing move to next step  |
 |iterate|optional|string|name of the module that returns array of objects. the call will get repeated for each of the members of the returned array |
-|check|required|object|what to do with the response recieved. What asserts to do and what properties to pick from the response to be used in subsequent calls|
+|check|required|object|what to do with the response received. What asserts to do and what properties to pick from the response to be used in subsequent calls|
 |collect|optional|object|the jsonpaths values that should be collected for use in subsequent calls. |
 |print|optional|array|the jsonpaths values that should be printed on the console output for debugging purposes |
 |skip_on_error|optional|bool| Default: true. If entered false, it will execute the step even if the previous steps have failed. Can be used to do cleanup / teardown activities |
