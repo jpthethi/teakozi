@@ -359,10 +359,15 @@ function all_tests(proj,dir,options){
   fs.mkdirSync(config.logFolder+test_context.id)
   // do it for all the files in test folder
   var result = Promise.resolve();
+  var results = [result]
   files.forEach(file => {
-    result = result.then(()=>test_run("./" +file,test_context))
+    if(config.sync){
+      result = result.then(()=>test_run("./" +file,test_context))
+    } else {
+      results[results.length] = test_run("./" +file,test_context);
+    }
   })
-  result.then(()=>{
+  Promise.all(results).then(()=>{
     test_context.end = new Date();
     test_context.duration = test_context.end-test_context.start;
 
@@ -449,7 +454,7 @@ function test_run(file, test_context){
       test_log.end = new Date();
       test_log.duration = test_log.end-test_log.start;
       var rand = Math.ceil(100*Math.random())
-      test_log.logfile =  date_stamp(new Date()) + ".json";
+      test_log.logfile =  date_stamp(new Date()) + "-" + rand + ".json";
       test_log.logfile_fullpath = config.logFolder + test_context.id + "/" + test_log.logfile;
       test_context.tests.push(test_log)
       fs.writeFile(test_log.logfile_fullpath, JSON.stringify(test_log), (err) => {
