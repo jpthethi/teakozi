@@ -193,15 +193,18 @@ print also supports checking the objects / subset of json as defined by json pat
 | Property |required| type | Purpose|
 | - | - |-|-|
 |status|optional|number|what status code is expected in response |
+|schema|optional|string|you can add the name of the Model corresponding to the expected response. The swagger definition should be done in config/index.js |
 |eq|optional|object|the jsonpaths that should be equal to |
 |neq|optional|object|the jsonpaths that should notbe equal to |
 |null|optional|array|the jsonpaths that should be null |
 |deepEqual| optional|array| The jsonpaths and what collected objects to check against.
 |regex| optional|array| The jsonpaths and their matching regex. The regex expression can be external mentioned as ~regex_for_currency~ or mentioned inline
 
+example:
 ```sh
     check:
      status: 200
+     schema: Domain
      body:
       eq:
        $.length: 20
@@ -219,7 +222,7 @@ print also supports checking the objects / subset of json as defined by json pat
 ```
 where full_roads_payload is collected in a previous step
 
-### Schema Validation
+### More on Schema Validation
 Define the location of the swagger file in your config/index.js with the name
  ```sh
   swagger: /config/swagger.yaml
@@ -231,11 +234,7 @@ Define the location of the swagger file in your config/index.js with the name
 ```
 The framework will add an assertion step to check if the schema of the response is matching with the schema as defined in the swagger. the assertion fails if the schema is not found or schema mismatch. the details of which all attribute are not matching schema is described in the test log JSON and viewable in the teakozi-viewer.
 
-# Running your test suits
-create an node project and include teazoki using
-```sh
-$ npm install teakozi
-```
+# Running a subset of your test suits based on tags
 
 in your index.js file
 ```sh
