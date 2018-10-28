@@ -11,11 +11,13 @@ steps:
     collect:
      all_roads: $..Name
      full_roads_payload: $
+     compute_angle: increment->$[1].orientation
   - get:
      url: "{{local_traffic_server}}/roads"
     name: "Roads Service"
     print:
      - status
+     - compute_angle
      - $..Name
      - $[0].Name
      - $

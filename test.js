@@ -1,2 +1,2 @@
 
-require("./index").start("./example")
+require("./index").start("./example",__dirname,"cars")

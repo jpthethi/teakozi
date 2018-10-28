@@ -79,10 +79,26 @@ function collect(collect,res,bags){
       Object.keys(collect).forEach(v=>{
         v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
         var what_to_collect = overlay.layer(collect[v], {}, bags)
-        collect_bag[v] = jp.query(res.body, what_to_collect)
+        var fn = function(x){return x}
+        if(what_to_collect.indexOf("->")>1) {
+          var splits = what_to_collect.split("->")
+          var fn_name = splits[0]
+          what_to_collect = splits[1]
+          if(config.lib[fn_name]!=undefined)
+            fn = config.lib[fn_name]
+          else
+            console.error("------Function with name " +  fn_name +" not found. Ignore------")
+        }
+        collect_bag[v] = fn(flatten(jp.query(res.body, what_to_collect)))
       })
     }
   }
+}
+
+function flatten(res){
+  if(res == undefined ) return undefined
+  if(res==res[0]) {res = res[0]; return res}
+  return res
 }
 
 function validate(c,res,bags){
@@ -251,8 +267,8 @@ function stephandler(s,bags){
   return new Promise(function(resolve, reject){
     p
     .then(b=>{
-      ret.debug_prints = debug_print(s.print,b,{},bags); // get config also here for now {}
       collect(s.collect,b,bags);
+      ret.debug_prints = debug_print(s.print,b,{},bags); // get config also here for now {}
       validate(check,b,bags).then(v=>{
         ret.end=new Date();
         ret.duration = ret.end-ret.start;
@@ -277,8 +293,15 @@ function debug_print(print,res, config, bags){
   if(print!=undefined){
     print.forEach(v=>{
       var msg;
-      if(v=="status") {
-        msg = v + " : " + res.status
+      if(v.indexOf("$")!=0) {
+        if(v=="status") {
+          msg = v + " : " + res.status
+        }
+        else {
+          bags.forEach(bag=>{
+            if(bag[v]!=undefined) msg = v + " : " + bag[v]
+          })
+        }
       }
       else {
         v=overlay.layer(v, config, bags)
