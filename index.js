@@ -359,7 +359,7 @@ function all_tests(proj,dir,options){
   fs.mkdirSync(config.logFolder+test_context.id)
   // do it for all the files in test folder
   var result = Promise.resolve();
-  var results = [result]
+  var results = []
   files.forEach(file => {
     if(config.sync){
       result = result.then(()=>test_run("./" +file,test_context))
@@ -367,6 +367,7 @@ function all_tests(proj,dir,options){
       results[results.length] = test_run("./" +file,test_context);
     }
   })
+  results[results.length] = result
   Promise.all(results).then(()=>{
     test_context.end = new Date();
     test_context.duration = test_context.end-test_context.start;
@@ -386,7 +387,6 @@ var requireFromRoot = (function(root) {
 })(__dirname);
 
 function test_run(file, test_context){
-  var test_log = {steps:[],errors:[],start:new Date(),end:"",valid:true, test_file: file}
   try {
     var test_stream = fs.readFileSync(file, 'utf8');
     var yml  = replace_yml(test_stream)
@@ -394,8 +394,6 @@ function test_run(file, test_context){
     //one more time if there are any placeholders from the modules
     yml  = overlay.layer(yml,config)
     var doc = yaml.safeLoad(yml);
-    test_log.name = doc.name;
-    test_log.tags = doc.tags
     var result = Promise.resolve();
     var collect_bag = {}
     var blocks = [0]
@@ -403,7 +401,13 @@ function test_run(file, test_context){
       blocks = requireFromRoot(config.modelFolder + doc.iterate)
     }
     blocks.forEach(block=>{
-      if(doc.name!=undefined) console.log(("Test: -------" + doc.name + "-----------").blue)
+      var test_log = {steps:[],errors:[],start:new Date(),end:"",valid:true, test_file: file}
+      test_log.name = doc.name;
+      test_log.tags = doc.tags
+      if(block!=0){
+        test_log.name = overlay.layer(test_log.name,config,[block])
+      }
+      if(test_log.name!=undefined) console.log(("Test: -------" + test_log.name + "-----------").blue)
       var step_sno = 0;
       doc.steps.forEach(s=>{
         var iterations = [0]
@@ -449,19 +453,19 @@ function test_run(file, test_context){
           });
         })
       })
-    })
-    result.then(r=>{
-      test_log.end = new Date();
-      test_log.duration = test_log.end-test_log.start;
-      var rand = Math.ceil(100*Math.random())
-      test_log.logfile =  date_stamp(new Date()) + "-" + rand + ".json";
-      test_log.logfile_fullpath = config.logFolder + test_context.id + "/" + test_log.logfile;
-      test_context.tests.push(test_log)
-      fs.writeFile(test_log.logfile_fullpath, JSON.stringify(test_log), (err) => {
-        if(err) console.log(err);
-        console.log('The file has been saved!');
-        return Promise.resolve()
-      });
+      result.then(r=>{
+        test_log.end = new Date();
+        test_log.duration = test_log.end-test_log.start;
+        var rand = Math.ceil(100*Math.random())
+        test_log.logfile =  date_stamp(new Date()) + "-" + rand + ".json";
+        test_log.logfile_fullpath = config.logFolder + test_context.id + "/" + test_log.logfile;
+        test_context.tests.push(test_log)
+        fs.writeFile(test_log.logfile_fullpath, JSON.stringify(test_log), (err) => {
+          if(err) console.log(err);
+          console.log('The file has been saved!');
+          return Promise.resolve()
+        });
+      })
     })
   } catch (e) {
     console.error(e);
