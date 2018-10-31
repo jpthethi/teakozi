@@ -46,6 +46,7 @@ This file  contains
 1. key value for replacing in the test yml files.
 2. The index file can optionally have a tag called swagger pointing to the location of the swagger file from project home directory.
 3. Also has extension functions that can be defined and used in the test definition. Take a look at section library functions below.
+4. sync flag - whether the test should run sync / async. please refer to section sync / async as the behavior is dependent on test sync attribute and config sync attribute
 
 
 see the example folder in the repo for reference. you need to update the config/index.js with your github auth to
@@ -61,6 +62,17 @@ you can collect data in a step and reuse in the subsequent steps. so you can col
 
 ### Library Functions
 Add library functions in your config/index.js file as follows
+
+### Sync / Async calling
+
+sync tag can be applied at the config level and also at file level. the framework will execute the test in the following manner
+|SYNC|Config true|Config false|Config undefined|
+| - | - |-|-|
+|Test - true|Sync|Sync|Sync|
+|Test- false|Sync|Async|Async|
+|Test - undefined|Sync|Async|Sync|
+
+This behavior is subject to change based on user feeback. Current phillosophy - default to sync when not explicit
 
 ```
 module.exports = {
@@ -99,6 +111,7 @@ require("teakozi").start("project/example")
 | - | - |-|-|
 |name|required|string|Name of the Test Case |
 |tags|optional|string|comma saperated list of tags for the test. you can use thse tags to filter / select the test you would like to take for a test run |
+|sync|optional|bool|Whether the test should run sync / async. please refer to section sync / async as the behavior is dependent on this and config sync flag |
 |iterate|optional|string|Name of the module file that returns an array of objects. The test steps defined will be repeated for all the elements of this array |
 |steps|required|array|See Steps Section|
 
@@ -244,6 +257,18 @@ require("teakozi").start("project/github",working dir,{tag:tags_list})
 run the test cases
 ```sh
 $ node index.js
+```
+
+## Chaining test execution
+
+The start function returns a promise that is resolved when tests complete. you can chain further tests like following or handle the test end event for any other handling
+```
+var dir = "/home/jitendra/code/teakozi-examples"
+var t = require("teakozi")
+t.start("project/github",dir,{tag:"cars"})
+  .then(()=>{
+    t.start("project/github",dir,{tag:"swagger"})
+  })
 ```
 
 The test logs are shown on screen and the logs are written into the project directory/log with a timestamped folder containing all and individual test run information

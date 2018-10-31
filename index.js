@@ -361,22 +361,30 @@ function all_tests(proj,dir,options){
   var result = Promise.resolve();
   var results = []
   files.forEach(file => {
-    if(config.sync){
-      result = result.then(()=>test_run("./" +file,test_context))
+    var sync = true
+    if(config.sync==false && file.sync == false || config.sync==undefined && file.sync == false ||config.sync==false && file.sync == undefined ){
+      sync = false
+    }
+    if(sync) {
+      result = result.then(()=>test_run("./" +file.name,test_context))
     } else {
-      results[results.length] = test_run("./" +file,test_context);
+      results[results.length] = test_run("./" +file.name,test_context);
     }
   })
   results[results.length] = result
-  Promise.all(results).then(()=>{
-    test_context.end = new Date();
-    test_context.duration = test_context.end-test_context.start;
+  console.log("Waiting for "+ results.length)
+  return new Promise((resolve, reject)=>{
+    Promise.all(results).then(()=>{
+      test_context.end = new Date();
+      test_context.duration = test_context.end-test_context.start;
 
-    fs.writeFile(config.logFolder+test_context.id+"/all.json", JSON.stringify(test_context), (err) => {
-      if(err) console.log(err);
-      console.log('The all file has been saved!');
+      fs.writeFile(config.logFolder+test_context.id+"/all.json", JSON.stringify(test_context), (err) => {
+        if(err) console.log(err);
+        console.log('The all file has been saved! ' + config.logFolder+test_context.id );
+        return resolve(test_context)
+      });
     });
-  });
+  })
 }
 
 var requireFromRoot = (function(root) {

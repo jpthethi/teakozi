@@ -22,10 +22,12 @@ const filter_file = (dir, tags="") => {
   collect.matchList = []
 
   var list = walkSync(dir);
-  list.forEach(file=>{
+  list.forEach(f=>{
+    var file = {name:f,sync:true}
     collect.godList.push(file)
-    var test_stream = fs.readFileSync(file, 'utf8');
+    var test_stream = fs.readFileSync(f, 'utf8');
     var doc = yaml.safeLoad(test_stream);
+    if(doc.sync!=undefined) file.sync = doc.sync
     if(tags=="") {
       collect.matchList.push(file)
     }
