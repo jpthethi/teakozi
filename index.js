@@ -401,13 +401,13 @@ function test_run(file, test_context){
       blocks = requireFromRoot(config.modelFolder + doc.iterate)
     }
     blocks.forEach(block=>{
-      var test_log = {steps:[],errors:[],start:new Date(),end:"",valid:true, test_file: file}
-      test_log.name = doc.name;
+      var test_log = {steps:[],errors:[],end:"",valid:true, test_file: file}
       test_log.tags = doc.tags
-      if(block!=0){
-        test_log.name = overlay.layer(test_log.name,config,[block])
-      }
-      if(test_log.name!=undefined) console.log(("Test: -------" + test_log.name + "-----------").blue)
+      test_log.name = overlay.layer(doc.name,config,[block])
+      result = result.then(x=>{
+        test_log.start = new Date()
+        if(test_log.name!=undefined) console.log(("Test: -------" + test_log.name + "-----------").blue)
+      })
       var step_sno = 0;
       doc.steps.forEach(s=>{
         var iterations = [0]
