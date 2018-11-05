@@ -235,6 +235,8 @@ example:
 ```
 where full_roads_payload is collected in a previous step
 
+The check expression can be json path expression or can also represent a collected value from a previous or current step
+
 ### More on Schema Validation
 Define the location of the swagger file in your config/index.js with the name
  ```sh

@@ -4,6 +4,7 @@ mustache.escape = function(text) {return text;};
 
 function layer(from, meta, bags){
   if(from == undefined) return from;
+  if(from === true || from === false) return from;
   if(bags==undefined) bags = []
   if (typeof from == 'number') {from = from.toString()}
   var out =  mustache.render(from,meta);

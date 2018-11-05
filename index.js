@@ -136,20 +136,32 @@ function validate(c,res,bags){
     })
   }
 
+  var lhs = function(v){
+    var lhs_val;
+    if(v.indexOf("$")==0){
+      lhs_val = jp.query(res.body, v)
+    } else {
+      bags.forEach(bag=>{
+        if(bag[v]!= undefined) lhs_val = bag[v]
+      })
+    }
+    return lhs_val;
+  };
+
   if(c.body==undefined) return retPromise
   var eq = c.body.eq;
   if(eq!=undefined){
     Object.keys(eq).forEach(v=>{
-      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
-      assert_eq(jp.query(res.body, v),overlay.layer(eq[v], config, bags),v,add)
+      v = overlay.layer(v, config, bags)
+      assert_eq(lhs(v),overlay.layer(eq[v], config, bags),v,add)
     })
   }
 
   var regex = c.body.regex;
   if(regex!=undefined){
     Object.keys(regex).forEach(v=>{
-      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
-      var sub = jp.query(res.body, v)
+      v = overlay.layer(v, config, bags)
+      var sub = lhs(v)
       assert_regex(sub,overlay.layer(regex[v], config, bags),v,add)
     })
   }
@@ -157,29 +169,29 @@ function validate(c,res,bags){
   var neq = c.body.neq;
   if(neq!=undefined){
     Object.keys(neq).forEach(v=>{
-      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
-      assert_neq(jp.query(res.body, v),overlay.layer(neq[v], config, bags),v,add)
+      v = overlay.layer(v, config, bags)
+      assert_neq(lhs(v),overlay.layer(neq[v], config, bags),v,add)
     })
   }
 
   var deq = c.body.deepEqual;
   if( deq!=undefined){
     Object.keys(deq).forEach(v=>{
-      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
+      v = overlay.layer(v, config, bags)
       var out = deq[v]
       var keep_looking = true;
       bags.forEach(bag=>{
         if(bag[out]!=undefined && keep_looking) {out = bag[out] ; keep_looking=false}
       })
-      assert_deq(jp.query(res.body, v),out,v,add)
+      assert_deq(lhs(v),out,v,add)
     })
   }
 
   var check_null = c.body.null;
   if(check_null!=undefined){
     check_null.forEach(v=>{
-      v = overlay.layer(v, {}, bags) //TODO: Get config also here for now {}
-      assert_null(jp.query(res.body, v),v,add)
+      v = overlay.layer(v, config, bags)
+      assert_null(lhs(v),v,add)
     })
   }
   return retPromise;
@@ -348,7 +360,7 @@ function all_tests(proj,dir,options){
 
   var files = require("./candidates").file_list(config.testFolder,options.tag)
   console.log("Filtered " + files.length + " tests matching tags")
-  console.log(files)
+  console.log(files.map(f=>{return f.name}))
 
   if (!fs.existsSync(config.logFolder)){
     fs.mkdirSync(config.logFolder);
@@ -372,7 +384,7 @@ function all_tests(proj,dir,options){
     }
   })
   results[results.length] = result
-  console.log("Waiting for "+ results.length)
+
   return new Promise((resolve, reject)=>{
     Promise.all(results).then(()=>{
       test_context.end = new Date();
