@@ -311,6 +311,8 @@ The test logs are shown on screen and the logs are written into the project dire
 # Teakozi-Viewer
 This supporting project enables you to view the HTML reports from the collected logs in the log directory (all.js). Please clone and install from the following github repository https://github.com/jpthethi/teakozi-viewer
 
+# Teakozi-Editor
+Teakozi editor https://github.com/jpthethi/teakozi-editor is a companion to Teakozi framework. The editor helps in providing a GUI for creating and editing the yml files that describe the tests.
 
 # Feedback
 Please submit your suggestions / bugs via Github. You are welcome to fork and submit back your pull requests
