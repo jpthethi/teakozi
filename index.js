@@ -273,6 +273,25 @@ function stephandler(s,bags){
     case "delete":
       p = invoke.delete(payload.url,payload.headers)
       break;
+    case "patch":
+      var content = {}
+      if(payload.file!=undefined){
+        var content = fs.readFileSync(config.payloadFolder+payload.file, 'utf8');
+        content = overlay.layer(content,config, bags)
+        p = invoke.patch(payload.url,payload.headers,content)
+      }
+      if(payload.json!=undefined){
+        var f = fs.readFileSync(config.payloadFolder+payload.json, 'utf8');
+        f = overlay.layer(f,config, bags)
+        var content = JSON.parse(f)
+        var o = JSON.parse(overlay.layer(JSON.stringify(payload.override),config, bags))
+        content = override(content, o)
+        p = invoke.patch_json(payload.url,payload.headers,content)
+      }
+      if(payload.file==undefined && payload.json==undefined){
+        p = invoke.patch(payload.url,payload.headers)
+      }
+      break;
     default:
       break;
   }

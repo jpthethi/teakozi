@@ -75,6 +75,29 @@ this.put_json = function (url,headers,msg){
   return post_generic(url,headers,msg,options)
 }
 
+
+this.patch = function (url,headers,msg){
+  var options = {
+    url : url,
+    method: 'PATCH',
+    headers:headers
+  };
+  if(msg !=undefined) {options.body = msg}
+  return post_generic(url,headers,msg,options)
+}
+
+this.patch_json = function (url,headers,msg){
+  var options = {
+    url : url,
+    method: 'PATCH',
+    headers:headers,
+    body: msg,
+    json:true
+  };
+  return post_generic(url,headers,msg,options)
+}
+
+
 function post_generic(url,headers,msg,options){
   return new Promise((resolve,reject)=>{
     request(options, function (error, response, body) {
