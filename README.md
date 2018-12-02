@@ -118,13 +118,14 @@ require("teakozi").start("project/example")
 ### Steps
 | Property |required| type | Purpose|
 | - | - |-|-|
-|get / post / put / delete / local |required|object|method to be called |
+|get / post / put / delete / local / mongo |required|object|method to be called |
 |name|required|string|Name of the Test Step |
 |delay|optional|int[,int]|Delay in seconds to start this step. Optionally separated by comma, you can specify how may times should you loop before giving up. Example 3,5 means do the step after 3 seconds delay. if fails then retry for 5 times every 3 seconds. if passing move to next step |
 |iterate|optional|string|name of the module that returns array of objects. the call will get repeated for each of the members of the returned array |
 |check|required|object|what to do with the response received. What asserts to do and what properties to pick from the response to be used in subsequent calls|
 |collect|optional|object|the jsonpaths values that should be collected for use in subsequent calls. |
 |print|optional|array|the jsonpaths values that should be printed on the console output for debugging purposes |
+|save|optional|object|the jsonpaths values that should be saved and the file name where it should be saved example : $: my_response_content The files are saved in the generated folder on the project|
 |skip_on_error|optional|bool| Default: true. If entered false, it will execute the step even if the previous steps have failed. Can be used to do cleanup / teardown activities |
 
 ### get / post / put / delete
@@ -135,12 +136,6 @@ require("teakozi").start("project/example")
 |file|na -get, optional - for post, optional - put, na - delete |string| Name of the file in modules (plain text) that needs to be posted |
 |override|na -get, optional - for post, optional - put, na - delete |array|  jsonpaths that need to be updated with value |
 |headers|optional -get, optional - for post, optional - put, optional - delete |array| headers that go on the http requests. like Authorization content-type etc |
-
-### local
-| Property |required| type | Purpose|
-| - | - |-|-|
-|file|required|string| name of the file in the payload folder |
-
 
 example:
 ```sh
@@ -155,11 +150,37 @@ post:
       User-Agent: Teakozi-test
 ```
 
-or for local file reading
+### local
+| Property |required| type | Purpose|
+| - | - |-|-|
+|file|required|string| name of the file in the payload folder |
+
+
+Example:
 ```sh
 local:
     file: roads
 ```
+
+### mongo
+| Property |required| type | Purpose|
+| - | - |-|-|
+|server|required|string| connection string / endpoint of the mongo server like "mongodb://localhost:27017" |
+|db|required|string| the name of the database |
+|collection|required|string| collection name in the above db from where the records have to be fetched |
+|query|required|object| the filter criteria of querying the records from collection |
+
+
+Example:
+```sh
+  - mongo:
+     server: "mongodb://localhost:27017"
+     db: 'test'
+     collection: "test"
+     query:
+       name: j
+```
+
 
 ### collect
 Collects the propoerties from the payload response that would be used in the subsequent steps
@@ -236,6 +257,18 @@ example:
 where full_roads_payload is collected in a previous step
 
 The check expression can be json path expression or can also represent a collected value from a previous or current step
+
+### Save
+Save is a utility that allows the resoponse recieved from the step into a file. you have control to save the full payload or partial payload using jsonpath
+
+
+example:
+```sh
+    save:
+      $: "file_mongo_recs"
+      $..name: "names_in_response"
+```
+
 
 ### More on Schema Validation
 Define the location of the swagger file in your config/index.js with the name
