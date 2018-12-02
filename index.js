@@ -6,6 +6,7 @@ var config ;
 var jp = require("jsonpath")
 var colors = require('colors');
 var schemaValidation = require('./schemaValidation');
+var mongoController = require('./mongoController')
 const assert = require('assert');
 
 function assert_regex(m_lhs, rhs, message,add){
@@ -223,11 +224,15 @@ function stephandler(s,bags){
 
   ret.url = payload.url || payload.file;
   ret.method = intent;
-  console.log(ret.method + " " + ret.url)
+  console.log(ret.method + " " + (ret.url!=undefined?req.url:''))
   var p = Promise.resolve()
   switch(intent){
     case "local":
       p = invoke.local(payload.file + ".json",config.payloadFolder)
+      break;
+    case "mongo":
+      console.log(payload)
+      p = mongoController.query(payload.server, payload.db, payload.collection, payload.query)
       break;
     case "get":
       p = invoke.get(payload.url,payload.headers)
