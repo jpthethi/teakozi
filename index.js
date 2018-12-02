@@ -224,7 +224,7 @@ function stephandler(s,bags){
 
   ret.url = payload.url || payload.file;
   ret.method = intent;
-  console.log(ret.method + " " + (ret.url!=undefined?req.url:''))
+  console.log(ret.method + " " + (ret.url!=undefined?ret.url:''))
   var p = Promise.resolve()
   switch(intent){
     case "local":
@@ -304,12 +304,18 @@ function stephandler(s,bags){
     p
     .then(b=>{
       collect(s.collect,b,bags);
-      ret.debug_prints = debug_print(s.print,b,{},bags); // get config also here for now {}
+      ret.debug_prints = debug_print(s.print,b,config,bags); // get config also here for now {}
       validate(check,b,bags).then(v=>{
         ret.end=new Date();
         ret.duration = ret.end-ret.start;
         ret.asserts = v.asserts;
         ret.valid = v.valid;
+
+        // Save comes Here :
+        // TBD - make it promise based
+        if(ret.valid) //save only when validation passes
+          payload_file_save(s.save,b,config,bags);
+
         resolve(ret)
       })
       .catch(e=>{console.log(e);reject(ret)})
@@ -322,6 +328,24 @@ function slice_pick(echo){
   if(Array.isArray(echo[0])) {ret = echo[0]}
   else ret = echo
   return ret;
+}
+
+function payload_file_save(save_files,res, config, bags){
+  if(save_files==undefined) return;
+
+  Object.keys(save_files).forEach(v=>{
+    v = overlay.layer(v, config, bags)
+    var echo = slice_pick(jp.query(res.body, v))
+    var file_name = overlay.layer(save_files[v], config, bags)
+    if(file_name.indexOf(".")==-1) { file_name = file_name + ".json"}
+    var file_path = config.generatedFolder + file_name ;
+
+    fs.writeFile( file_path, JSON.stringify(echo) , (err) => {
+      if(err) console.log(err);
+      console.log('File has been generated : ' + file_path );
+    });
+
+  })
 }
 
 function debug_print(print,res, config, bags){
@@ -379,7 +403,7 @@ function all_tests(proj,dir,options){
   config.payloadFolder = "./"+proj+"/payload/"
   config.modelFolder = "./"+proj+"/models/"
   config.logFolder = "./"+proj+"/logs/"
-
+  config.generatedFolder = "./" + proj +"/generated/"
   if(config.swagger) schemaValidation.setSwagger("./" + proj + config.swagger)
 
   var files = require("./candidates").file_list(config.testFolder,options.tag)
@@ -388,6 +412,9 @@ function all_tests(proj,dir,options){
 
   if (!fs.existsSync(config.logFolder)){
     fs.mkdirSync(config.logFolder);
+  }
+  if (!fs.existsSync(config.generatedFolder)){
+    fs.mkdirSync(config.generatedFolder);
   }
   var test_context = {tags:options.tag, tests:[]}
   test_context.start = new Date();
