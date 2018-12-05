@@ -7,6 +7,8 @@ var jp = require("jsonpath")
 var colors = require('colors');
 var schemaValidation = require('./schemaValidation');
 var mongoController = require('./mongoController')
+var shallowCompare = require("./shallowCompare")
+
 const assert = require('assert');
 
 function assert_regex(m_lhs, rhs, message,add){
@@ -38,6 +40,14 @@ function assert_eq(lhs, rhs, message,add){
   var assertObj={}
   assertObj.valid = (lhs==rhs)
   assertObj.detail = "Expected " + message + " : " + lhs + " got " + rhs;
+  assertObj.message = ("Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
+  if(add!=undefined) add(assertObj)
+}
+
+function assert_shallow_eq(lhs, rhs, message,add){
+  var assertObj={}
+  assertObj.valid = shallowCompare.isShallowEqual(rhs,lhs)
+  assertObj.detail = "Expected " + message + " not subset ";
   assertObj.message = ("Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
   if(add!=undefined) add(assertObj)
 }
@@ -185,6 +195,19 @@ function validate(c,res,bags){
         if(bag[out]!=undefined && keep_looking) {out = bag[out] ; keep_looking=false}
       })
       assert_deq(lhs(v),out,v,add)
+    })
+  }
+
+  var seq = c.body.shallowEqual;
+  if(seq!=undefined){
+    Object.keys(seq).forEach(v=>{
+      v = overlay.layer(v, config, bags)
+      var out = seq[v]
+      var keep_looking = true;
+      bags.forEach(bag=>{
+        if(bag[out]!=undefined && keep_looking) {out = bag[out] ; keep_looking=false}
+      })
+      assert_shallow_eq(lhs(v),out,v,add)
     })
   }
 

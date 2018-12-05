@@ -232,6 +232,7 @@ print also supports checking the objects / subset of json as defined by json pat
 |neq|optional|object|the jsonpaths that should notbe equal to |
 |null|optional|array|the jsonpaths that should be null |
 |deepEqual| optional|array| The jsonpaths and what collected objects to check against.
+|shallowEqual| optional|array| The jsonpaths and what collected objects to check against. This comparision checkes if the fields and their values in the collected object are present in the jsonpath object.
 |regex| optional|array| The jsonpaths and their matching regex. The regex expression can be external mentioned as ~regex_for_currency~ or mentioned inline
 
 example:
@@ -253,6 +254,10 @@ example:
       deepEqual:
         $: full_roads_payload
         $..Name: all_roads
+      shallowEqual:
+        $: all
+
+
 ```
 where full_roads_payload is collected in a previous step
 
