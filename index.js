@@ -44,9 +44,9 @@ function assert_eq(lhs, rhs, message,add){
   if(add!=undefined) add(assertObj)
 }
 
-function assert_shallow_eq(lhs, rhs, message,add){
+function assert_shallow_eq(seq, message,add){
   var assertObj={}
-  assertObj.valid = shallowCompare.isShallowEqual(rhs,lhs)
+  assertObj.valid = shallowCompare.isShallowEqual(seq.subObj, seq.superObj,seq)
   assertObj.detail = "Expected " + message + " not subset ";
   assertObj.message = ("Assert: " + message + " : " + (assertObj.valid?"PASS".green:"FAIL".red))
   if(add!=undefined) add(assertObj)
@@ -198,17 +198,22 @@ function validate(c,res,bags){
     })
   }
 
-  var seq = c.body.shallowEqual;
-  if(seq!=undefined){
-    Object.keys(seq).forEach(v=>{
-      v = overlay.layer(v, config, bags)
-      var out = seq[v]
-      var keep_looking = true;
-      bags.forEach(bag=>{
-        if(bag[out]!=undefined && keep_looking) {out = bag[out] ; keep_looking=false}
-      })
-      assert_shallow_eq(lhs(v),out,v,add)
-    })
+  if(c.body.shallowEqual!=undefined){
+    c.body.shallowEqual.forEach(seq=>{
+      var findObj = function(v){
+        v = overlay.layer(v, config, bags)
+        var out = seq[v]
+        var keep_looking = true;
+        bags.forEach(bag=>{
+          if(bag[out]!=undefined && keep_looking) {out = bag[out] ; keep_looking=false}
+        })
+        seq[v+"Obj"] = out;
+      }
+      findObj("sub")
+      findObj("super")
+      if(seq.name==undefined) {seq.name = "JSON Comparision"}
+      assert_shallow_eq(seq,seq.name,add)
+  })
   }
 
   var check_null = c.body.null;
@@ -254,7 +259,7 @@ function stephandler(s,bags){
       p = invoke.local(payload.file + ".json",config.payloadFolder)
       break;
     case "mongo":
-      console.log(payload)
+      //console.log(payload)
       p = mongoController.query(payload.server, payload.db, payload.collection, payload.query)
       break;
     case "get":
