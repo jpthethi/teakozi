@@ -232,7 +232,7 @@ print also supports checking the objects / subset of json as defined by json pat
 |neq|optional|object|the jsonpaths that should notbe equal to |
 |null|optional|array|the jsonpaths that should be null |
 |deepEqual| optional|array| The jsonpaths and what collected objects to check against.
-|shallowEqual| optional|array| The jsonpaths and what collected objects to check against. This comparision checkes if the fields and their values in the collected object are present in the jsonpath object.
+|shallowEqual| optional|array| compare two collected json to match and validate such that each element of A is present in the B (A is a subset B is a superset)
 |regex| optional|array| The jsonpaths and their matching regex. The regex expression can be external mentioned as ~regex_for_currency~ or mentioned inline
 
 example:
@@ -255,13 +255,75 @@ example:
         $: full_roads_payload
         $..Name: all_roads
       shallowEqual:
-        $: all
+        - sub: sub
+          super: super
+          ar: empid
+          permissionList: permissionId
 
 
 ```
+
+
 where full_roads_payload is collected in a previous step
 
 The check expression can be json path expression or can also represent a collected value from a previous or current step
+
+
+### shallowEqual
+
+Shallow Equal is a way to compare two collected jsons to match and validate such that each element of A is present in the B (A is a subset B is a superset).
+
+| Property |required| type | Purpose|
+| - | - |-|-|
+|sub|required|string|the name of the object collected in this or previous steps that should be the subset |
+|super|required|string|the name of the object collected in this or previous steps that should be the superset |
+|[key]|optional / multi|string| key is the arrays in the object and value is the attribute of the object that should be used to compare and identify the object  |
+
+example
+JSON A (subset)
+```sh
+{
+    organization:"abc",
+    address:"outer ring road",
+    city:"bangalore",
+    employees:[{
+        emp: 123,
+        name: "Ned Stark"
+    },{
+        emp: 234,
+        name: "John Snow"
+    }]
+}
+```
+
+JSON B (superset)
+```sh
+{
+    organization:"abc",
+    address:"outer ring road",
+    city:"bangalore",
+    pin: 560102
+    employees:[{
+        emp: 123,
+        name: "Ned Stark",
+        cool: true
+    },{
+        emp: 234,
+        name: "John Snow"
+    },{
+        emp: 345,
+        name: "Sansa"
+    }]
+}
+```
+if test.yml
+
+      shallowEqual:
+        - sub: A
+          super: B
+          employees: empid
+
+Result: Pass
 
 ### Save
 Save is a utility that allows the resoponse recieved from the step into a file. you have control to save the full payload or partial payload using jsonpath
@@ -273,7 +335,6 @@ example:
       $: "file_mongo_recs"
       $..name: "names_in_response"
 ```
-
 
 ### More on Schema Validation
 Define the location of the swagger file in your config/index.js with the name
