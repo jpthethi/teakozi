@@ -259,7 +259,6 @@ function stephandler(s,bags){
       p = invoke.local(payload.file + ".json",config.payloadFolder)
       break;
     case "mongo":
-      //console.log(payload)
       p = mongoController.query(payload.server, payload.db, payload.collection, payload.query)
       break;
     case "get":
@@ -268,12 +267,14 @@ function stephandler(s,bags){
     case "post":
       var content = {}
       if(payload.file!=undefined){
-        var content = fs.readFileSync(config.payloadFolder+payload.file, 'utf8');
+        var fileName = overlay.layer(config.payloadFolder+payload.file,config, bags)
+        var content = fs.readFileSync(fileName, 'utf8');
         content = overlay.layer(content,config, bags)
         p = invoke.post(payload.url,payload.headers,content)
       }
       if(payload.json!=undefined){
-        var f = fs.readFileSync(config.payloadFolder+payload.json, 'utf8');
+        var fileName = overlay.layer(config.payloadFolder+payload.json,config,bags)
+        var f = fs.readFileSync(fileName, 'utf8');
         f = overlay.layer(f,config, bags)
         var content = JSON.parse(f)
         var o = JSON.parse(overlay.layer(JSON.stringify(payload.override),config, bags))
@@ -287,12 +288,14 @@ function stephandler(s,bags){
     case "put":
       var content = {}
       if(payload.file!=undefined){
-        var content = fs.readFileSync(config.payloadFolder+payload.file, 'utf8');
+        var fileName = overlay.layer(config.payloadFolder+payload.file,config, bags)
+        var content = fs.readFileSync(fileName, 'utf8');
         content = overlay.layer(content,config, bags)
         p = invoke.put(payload.url,payload.headers,content)
       }
       if(payload.json!=undefined){
-        var f = fs.readFileSync(config.payloadFolder+payload.json, 'utf8');
+        var fileName = overlay.layer(config.payloadFolder+payload.json,config,bags)
+        var f = fs.readFileSync(fileName, 'utf8');
         f = overlay.layer(f,config, bags)
         var content = JSON.parse(f)
         var o = JSON.parse(overlay.layer(JSON.stringify(payload.override),config, bags))
@@ -309,12 +312,14 @@ function stephandler(s,bags){
     case "patch":
       var content = {}
       if(payload.file!=undefined){
-        var content = fs.readFileSync(config.payloadFolder+payload.file, 'utf8');
+        var fileName = overlay.layer(config.payloadFolder+payload.file,config, bags)
+        var content = fs.readFileSync(fileName, 'utf8');
         content = overlay.layer(content,config, bags)
         p = invoke.patch(payload.url,payload.headers,content)
       }
       if(payload.json!=undefined){
-        var f = fs.readFileSync(config.payloadFolder+payload.json, 'utf8');
+        var fileName = overlay.layer(config.payloadFolder+payload.json,config,bags)
+        var f = fs.readFileSync(fileName, 'utf8');
         f = overlay.layer(f,config, bags)
         var content = JSON.parse(f)
         var o = JSON.parse(overlay.layer(JSON.stringify(payload.override),config, bags))
@@ -331,6 +336,8 @@ function stephandler(s,bags){
   return new Promise(function(resolve, reject){
     p
     .then(b=>{
+      console.log("-----------debug 2----------")
+      console.log(b)
       collect(s.collect,b,bags);
       ret.debug_prints = debug_print(s.print,b,config,bags); // get config also here for now {}
       validate(check,b,bags).then(v=>{
@@ -343,6 +350,8 @@ function stephandler(s,bags){
         // TBD - make it promise based
         if(ret.valid) //save only when validation passes
           payload_file_save(s.save,b,config,bags);
+
+        console.log("-----------debug 4----------")
 
         resolve(ret)
       })
@@ -392,12 +401,15 @@ function debug_print(print,res, config, bags){
         }
       }
       else {
+        console.log("-----------debug 3----------")
         v=overlay.layer(v, config, bags)
         var echo = slice_pick(jp.query(res.body, v))
+        console.log(echo)
         msg = v + " : " + JSON.stringify(echo)
         msgObj = {}
         msgObj[v] = echo
       }
+      console.log("-----------debug 3a----------")
       console.log(msg);
       ret.push(msg);
     })
