@@ -336,11 +336,7 @@ function stephandler(s,bags){
   return new Promise(function(resolve, reject){
     p
     .then(b=>{
-      console.log("-----------debug 2----------")
-      console.log(b)
       collect(s.collect,b,bags);
-      console.log("-----------debug 3 enter ----------")
-      console.log(s.print)
       ret.debug_prints = debug_print(s.print,b,config,bags); // get config also here for now {}
       validate(check,b,bags).then(v=>{
         ret.end=new Date();
@@ -352,8 +348,6 @@ function stephandler(s,bags){
         // TBD - make it promise based
         if(ret.valid) //save only when validation passes
           payload_file_save(s.save,b,config,bags);
-
-        console.log("-----------debug 4----------")
 
         resolve(ret)
       })
@@ -389,16 +383,10 @@ function payload_file_save(save_files,res, config, bags){
 
 function debug_print(print,res, config, bags){
   var ret = []
-  console.log("-----------debug 3 in debug print----------")
-  console.log(print)
   if(print!=undefined){
     print.forEach(v=>{
-      console.log("-----------debug 3 init----------")
-      console.log(v)
       var msg;
       if(v.indexOf("$")!=0) {
-        console.log("-----------indexOf not 0----------")
-        console.log(v.indexOf("$"))
         if(v=="status") {
           msg = v + " : " + res.status
         }
@@ -407,19 +395,14 @@ function debug_print(print,res, config, bags){
             if(bag[v]!=undefined) msg = v + " : " + bag[v]
           })
         }
-        console.log(msg);
-        console.log("-----------indexOf not 0 end----------")
       }
       else {
-        console.log("-----------debug 3----------")
         v=overlay.layer(v, config, bags)
         var echo = slice_pick(jp.query(res.body, v))
-        console.log(echo)
         msg = v + " : " + JSON.stringify(echo)
         msgObj = {}
         msgObj[v] = echo
       }
-      console.log("-----------debug 3a----------")
       console.log(msg);
       ret.push(msg);
     })
