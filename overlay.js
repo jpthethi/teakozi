@@ -19,7 +19,11 @@ function repaint(str, collect_bag){
   if(collect_bag==undefined) return str;
   if (typeof str == 'number') {str = str.toString()}
   Object.keys(collect_bag).forEach(v=>{
-    str = str.replace(new RegExp("~"+v+"~", 'g'),collect_bag[v])
+    var fromBag = collect_bag[v]
+    if(typeof fromBag == "object")
+      fromBag = JSON.stringify(fromBag[0]); // figure out [0] mistry
+
+    str = str.replace(new RegExp("~"+v+"~", 'g'),fromBag)
   })
   return str
 
