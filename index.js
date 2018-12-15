@@ -430,7 +430,14 @@ function all_tests(proj,dir,options){
     })(dir);
   }
 
-  config = requireFromRoot("./" + proj + '/config/index.js')
+  config = { }
+  // if index is not present - ignore and assume config is {}
+  try {
+    fs.readFileSync("./" + proj + '/config/index.js', 'utf8');
+    config = requireFromRoot("./" + proj + '/config/index.js')
+  }
+  catch(e) {console.log("cannot read config/index.js assuming config as {}");}
+
   config.testFolder = "./"+proj+"/tests/"
   config.moduleFolder = "./"+proj+"/modules/"
   config.payloadFolder = "./"+proj+"/payload/"
