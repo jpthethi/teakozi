@@ -32,6 +32,23 @@ this.get = function (url,headers){
   })
 }
 
+this.delete = function (url,headers){
+  return new Promise((resolve,reject)=>{
+    var options = {
+      url : url,
+      method: 'DELETE',
+      headers:headers
+    };
+
+    request(options, function (error, response, body) {
+      if (error) { reject(error) }
+      else {
+        resolve({status: response.statusCode,body:JSON.parse(body)})
+      }
+    });
+  })
+}
+
 this.post_json = function (url,headers,msg){
   var options = {
     url : url,
