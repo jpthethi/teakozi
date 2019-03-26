@@ -25,7 +25,12 @@ this.get = function (url,headers){
 
       if (error) { reject(error) }
       else {
-        resolve({status: response.statusCode,body:JSON.parse(body)})
+        try {
+          body = JSON.parse(body);
+        } catch {
+          console.log("invalid json : " + body)
+        }
+        resolve({status: response.statusCode,body:body})
       }
     });
 
